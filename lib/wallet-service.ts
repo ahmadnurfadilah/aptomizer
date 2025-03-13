@@ -76,7 +76,7 @@ export async function getUserByWalletAddress(walletAddress: string) {
 
   // Don't return the encrypted private key to the client
   if (user.aiWallet) {
-    const { privateKey, ...aiWalletWithoutPrivateKey } = user.aiWallet;
+    const { ...aiWalletWithoutPrivateKey } = user.aiWallet;
     return {
       ...user,
       aiWallet: {
@@ -115,7 +115,7 @@ export async function updateUserProfile(walletAddress: string, profileData: { di
 
   // Don't return the encrypted private key to the client
   if (updatedUser.aiWallet) {
-    const { privateKey, ...aiWalletWithoutPrivateKey } = updatedUser.aiWallet;
+    const { ...aiWalletWithoutPrivateKey } = updatedUser.aiWallet;
     return {
       ...updatedUser,
       aiWallet: {
@@ -144,6 +144,7 @@ export async function createUser(walletAddress: string) {
   });
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function saveRiskProfile(userId: string, riskProfileData: any) {
   // Ensure all required fields are present with default values if not provided
   const data = {

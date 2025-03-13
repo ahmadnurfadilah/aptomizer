@@ -19,11 +19,11 @@ export const getBalance = tool({
           decimals: 8,
         },
       };
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       return {
         status: "error",
-        message: error.message,
-        code: error.code || "UNKNOWN_ERROR",
+        message: error instanceof Error ? error.message : 'Unknown error occurred',
+        code: error instanceof Error && 'code' in error ? (error as {code?: string}).code : 'UNKNOWN_ERROR',
       };
     }
   },

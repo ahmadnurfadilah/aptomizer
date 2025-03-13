@@ -1,3 +1,4 @@
+/* eslint-disable react/no-unescaped-entities */
 "use client";
 
 import { useEffect, useState } from "react";
@@ -146,6 +147,7 @@ export default function ProfilePage() {
     }
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleUpdateRiskProfile = async (riskProfileData: any) => {
     if (!connected || !account?.address) return;
 

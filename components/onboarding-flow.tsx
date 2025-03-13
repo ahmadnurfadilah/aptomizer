@@ -75,6 +75,7 @@ export function OnboardingFlow() {
     setShowRiskModal(true);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleRiskProfileComplete = async (riskProfileData: any) => {
     setShowRiskModal(false);
     setIsLoading(true);
@@ -275,7 +276,7 @@ export function OnboardingFlow() {
           </div>
           <DialogFooter>
             <Button onClick={closeSuccessModal}>
-              I've Saved My Private Key
+              I&apos;ve Saved My Private Key
             </Button>
           </DialogFooter>
         </DialogContent>

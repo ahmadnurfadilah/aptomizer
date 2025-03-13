@@ -23,6 +23,8 @@ export default function Home() {
     maxSteps: 5,
   });
 
+  console.log(isCheckingOnboarding);
+
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       if (connected && account?.address) {

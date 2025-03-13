@@ -63,7 +63,7 @@ export function WalletSelector(walletSortingOptions: WalletSortingOptions) {
 				description: "Failed to copy wallet address.",
 			});
 		}
-	}, [account?.address, toast]);
+	}, [account?.address]);
 
 	return connected ? (
 		<DropdownMenu>
