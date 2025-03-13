@@ -1,0 +1,47 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DIRECT_URL")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  walletAddress String    @unique
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  aiWallet      AiWallet?
+  riskProfile   RiskProfile?
+}
+
+model AiWallet {
+  id            String   @id @default(cuid())
+  walletAddress String   @unique
+  privateKey    String
+  publicKey     String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RiskProfile {
+  id                 String   @id @default(cuid())
+  riskTolerance      Int      // 1-10 scale
+  investmentGoals    String[] // Array of goals
+  timeHorizon        String   // Short, Medium, Long
+  experienceLevel    String   // Beginner, Intermediate, Advanced
+  preferredAssets    String[] // Types of assets preferred
+  volatilityTolerance Int      // 1-10 scale
+  incomeRequirement  Boolean  // Whether regular income is required
+  rebalancingFrequency String  // Daily, Weekly, Monthly, Quarterly
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  userId             String   @unique
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

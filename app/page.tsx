@@ -7,9 +7,48 @@ import { useChat } from "@ai-sdk/react";
 import { Bot } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { marked } from "marked";
+import { OnboardingFlow } from "@/components/onboarding-flow";
+import { useWallet } from "@aptos-labs/wallet-adapter-react";
+import { useEffect, useState } from "react";
+import { WalletSelector } from "@/components/wallet-selector";
 
 export default function Home() {
+  const { account, connected } = useWallet();
+  const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(false);
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const { messages, status, input, handleInputChange, handleSubmit } = useChat();
+
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      if (connected && account?.address) {
+        setIsCheckingOnboarding(true);
+        try {
+          const response = await fetch('/api/user/has-ai-wallet', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ walletAddress: account.address.toString() }),
+          });
+
+          if (!response.ok) {
+            throw new Error('Failed to check onboarding status');
+          }
+
+          const data = await response.json();
+          setHasCompletedOnboarding(data.hasAiWallet);
+        } catch (error) {
+          console.error("Error checking onboarding status:", error);
+        } finally {
+          setIsCheckingOnboarding(false);
+        }
+      } else {
+        setHasCompletedOnboarding(false);
+      }
+    };
+
+    checkOnboardingStatus();
+  }, [connected, account]);
 
   const handleOnSubmit = (e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLDivElement>) => {
     handleSubmit(e);
@@ -26,8 +65,36 @@ export default function Home() {
       }}
     >
       <Spotlight />
+
       <AnimatePresence>
-        {messages?.length > 0 ? (
+        {!connected ? (
+          <motion.div
+            initial={{ y: 0, opacity: 1 }}
+            exit={{ y: -50, opacity: 0 }}
+            transition={{ type: "spring", duration: 0.3 }}
+            className="w-full min-h-screen flex items-center justify-center"
+          >
+            <div className="max-w-xl mx-auto w-full">
+              <div className="text-center mb-8">
+                <h1 className="text-3xl font-bold text-balance mb-3">AI-Powered DeFi Assistant on Aptos</h1>
+                <p className="opacity-60 mb-8">
+                  AptoMizer simplifies complex crypto operations through natural language interaction and automated portfolio management
+                </p>
+                <WalletSelector />
+              </div>
+            </div>
+          </motion.div>
+        ) : !hasCompletedOnboarding ? (
+          <motion.div
+            initial={{ y: 0, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -50, opacity: 0 }}
+            transition={{ type: "spring", duration: 0.3 }}
+            className="w-full min-h-screen flex items-center justify-center py-10"
+          >
+            <OnboardingFlow />
+          </motion.div>
+        ) : messages?.length > 0 ? (
           <motion.div
             initial={{ y: -20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -71,7 +138,9 @@ export default function Home() {
           <motion.div
             initial={{ y: 0, opacity: 1 }}
             exit={{ y: -50, opacity: 0 }}
-            transition={{ type: "spring", duration: 0.3 }} className="w-full min-h-screen flex items-center justify-center">
+            transition={{ type: "spring", duration: 0.3 }}
+            className="w-full min-h-screen flex items-center justify-center"
+          >
             <div className="max-w-xl mx-auto w-full">
               <div className="text-center mb-8">
                 <h1 className="text-3xl font-bold text-balance mb-3">AI-Powered DeFi Assistant on Aptos</h1>
