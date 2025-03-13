@@ -56,6 +56,85 @@ export async function checkUserHasAiWallet(walletAddress: string): Promise<boole
   return !!user?.aiWallet;
 }
 
+export async function getUserByWalletAddress(walletAddress: string) {
+  const user = await prisma.user.findUnique({
+    where: { walletAddress },
+    include: {
+      aiWallet: true,
+      riskProfile: true,
+      transactions: {
+        take: 10,
+        orderBy: {
+          timestamp: 'desc'
+        }
+      }
+    },
+  });
+
+  if (!user) return null;
+
+  // Don't return the encrypted private key to the client
+  if (user.aiWallet) {
+    const { privateKey, ...aiWalletWithoutPrivateKey } = user.aiWallet;
+    return {
+      ...user,
+      aiWallet: {
+        ...aiWalletWithoutPrivateKey,
+        // Add default values for new fields until migration is applied
+        status: "active",
+        balance: 0,
+        lastActivity: null,
+        transactions: []
+      }
+    };
+  }
+
+  return user;
+}
+
+export async function updateUserProfile(walletAddress: string, profileData: { displayName?: string; email?: string; bio?: string }) {
+  const user = await prisma.user.findUnique({
+    where: { walletAddress },
+  });
+
+  if (!user) return null;
+
+  const updatedUser = await prisma.user.update({
+    where: { id: user.id },
+    data: {
+      displayName: profileData.displayName,
+      email: profileData.email,
+      bio: profileData.bio,
+    },
+    include: {
+      aiWallet: true,
+      riskProfile: true,
+    },
+  });
+
+  // Don't return the encrypted private key to the client
+  if (updatedUser.aiWallet) {
+    const { privateKey, ...aiWalletWithoutPrivateKey } = updatedUser.aiWallet;
+    return {
+      ...updatedUser,
+      aiWallet: {
+        ...aiWalletWithoutPrivateKey,
+        // Add default values for new fields until migration is applied
+        status: "active",
+        balance: 0,
+        lastActivity: null,
+        transactions: []
+      },
+      transactions: []
+    };
+  }
+
+  return {
+    ...updatedUser,
+    transactions: []
+  };
+}
+
 export async function createUser(walletAddress: string) {
   return prisma.user.upsert({
     where: { walletAddress },
@@ -65,11 +144,25 @@ export async function createUser(walletAddress: string) {
 }
 
 export async function saveRiskProfile(userId: string, riskProfileData: any) {
+  // Ensure all required fields are present with default values if not provided
+  const data = {
+    riskTolerance: riskProfileData.riskTolerance || 5,
+    investmentGoals: riskProfileData.investmentGoals || [],
+    timeHorizon: riskProfileData.timeHorizon || 'Medium',
+    experienceLevel: riskProfileData.experienceLevel || 'Beginner',
+    preferredAssets: riskProfileData.preferredAssets || [],
+    volatilityTolerance: riskProfileData.volatilityTolerance || 5,
+    incomeRequirement: riskProfileData.incomeRequirement || false,
+    rebalancingFrequency: riskProfileData.rebalancingFrequency || 'Monthly',
+    maxDrawdown: riskProfileData.maxDrawdown || null,
+    targetAPY: riskProfileData.targetAPY || null,
+  };
+
   return prisma.riskProfile.upsert({
     where: { userId },
-    update: riskProfileData,
+    update: data,
     create: {
-      ...riskProfileData,
+      ...data,
       userId,
     },
   });
