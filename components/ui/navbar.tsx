@@ -4,6 +4,8 @@ import { usePathname } from "next/navigation";
 import { BotMessageSquare, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import Logo from "./logo";
+import { WalletSelector } from "../wallet-selector";
+import { ModeToggle } from "../mode-toggle";
 
 export const Navbar = () => {
 	const pathname = usePathname();
@@ -25,7 +27,10 @@ export const Navbar = () => {
 					</Link>
 				</div>
 			</div>
-			<div className="flex justify-end"></div>
+			<div className="flex justify-end gap-2">
+				<ModeToggle />
+				<WalletSelector />
+			</div>
 		</nav>
 	);
 }
