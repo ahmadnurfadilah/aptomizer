@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { BotMessageSquare, LayoutDashboard } from "lucide-react";
+import { BotMessageSquare, LayoutDashboard, UserCircle } from "lucide-react";
 import Link from "next/link";
 import Logo from "./logo";
 import { WalletSelector } from "../wallet-selector";
@@ -24,6 +24,10 @@ export const Navbar = () => {
 					<Link href="/dashboard" className={`text-sm py-2 px-3 md:px-5 rounded-full flex items-center gap-1.5 bg-gradient-to-tr ${pathname === '/dashboard' ? 'from-white/20 to-white/10' : 'hover:bg-white/5'}`}>
 						<LayoutDashboard className="size-4" />
 						<span className={`hidden md:block ${pathname === '/dashboard' ? 'text-white/80' : 'text-white/60'}`}>Dashboard</span>
+					</Link>
+					<Link href="/profile" className={`text-sm py-2 px-3 md:px-5 rounded-full flex items-center gap-1.5 bg-gradient-to-tr ${pathname === '/profile' ? 'from-white/20 to-white/10' : 'hover:bg-white/5'}`}>
+						<UserCircle className="size-4" />
+						<span className={`hidden md:block ${pathname === '/profile' ? 'text-white/80' : 'text-white/60'}`}>Profile</span>
 					</Link>
 				</div>
 			</div>
