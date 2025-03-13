@@ -16,7 +16,12 @@ export default function Home() {
   const { account, connected } = useWallet();
   const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
-  const { messages, status, input, handleInputChange, handleSubmit } = useChat();
+  const { messages, status, input, handleInputChange, handleSubmit } = useChat({
+    body: {
+      userWalletAddress: account?.address?.toString(),
+    },
+    maxSteps: 5,
+  });
 
   useEffect(() => {
     const checkOnboardingStatus = async () => {

@@ -1,6 +1,7 @@
 import { prisma } from './prisma';
-import { Account } from '@aptos-labs/ts-sdk';
+import { Account, Aptos, AptosConfig, Ed25519PrivateKey, Network } from '@aptos-labs/ts-sdk';
 import crypto from 'crypto';
+import { AgentRuntime, LocalSigner } from 'move-agent-kit';
 
 // Simple encryption/decryption functions
 // In production, use a more secure method and store the key in a secure vault
@@ -213,4 +214,21 @@ export async function getAiWallet(userId: string) {
     ...aiWallet,
     privateKey: decryptedPrivateKey,
   };
+}
+
+export async function getAptosAgent(userId: string) {
+  const aptosConfig = new AptosConfig({
+    network: process.env.NETWORK === "mainnet" ? Network.MAINNET : Network.TESTNET,
+  })
+  const aptos = new Aptos(aptosConfig)
+
+  const aiWallet = await getAiWallet(userId);
+  const privateKey = new Ed25519PrivateKey(aiWallet!.privateKey)
+  const account = Account.fromPrivateKey({ privateKey })
+  const signer = new LocalSigner(account, process.env.NETWORK === "mainnet" ? Network.MAINNET : Network.TESTNET)
+  const aptosAgent = new AgentRuntime(signer, aptos, {
+    PANORA_API_KEY: process.env.PANORA_API_KEY,
+  })
+
+  return aptosAgent;
 }

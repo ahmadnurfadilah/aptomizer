@@ -12,7 +12,7 @@ export const WalletProvider = ({ children }: PropsWithChildren) => {
     <QueryClientProvider client={queryClient}>
       <AptosWalletAdapterProvider
         autoConnect={true}
-        dappConfig={{ network: Network.MAINNET }}
+        dappConfig={{ network: process.env.NETWORK === "mainnet" ? Network.MAINNET : Network.TESTNET }}
         onError={(error) => {
           toast.error('Error', {
             description: error || "Unknown wallet error",
