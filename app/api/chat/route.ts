@@ -12,6 +12,37 @@ export async function POST(req: Request) {
     const user = await getUserByWalletAddress(userWalletAddress!);
     const aiWallet = await getAiWallet(user!.id);
 
+    // Define RiskProfile type
+    type RiskProfile = {
+        riskTolerance?: number;
+        investmentGoals?: string[];
+        timeHorizon?: string;
+        experienceLevel?: string;
+        preferredAssets?: string[];
+        volatilityTolerance?: number;
+        incomeRequirement?: boolean;
+        rebalancingFrequency?: string;
+        maxDrawdown?: number | null;
+        targetAPY?: number | null;
+    };
+
+    // Format risk profile data for the system prompt
+    const riskProfile = user?.riskProfile || {} as RiskProfile;
+    const riskProfileText = user?.riskProfile ? `
+        ## User Risk Profile
+        - Risk Tolerance: ${riskProfile.riskTolerance}/10
+        - Investment Goals: ${riskProfile.investmentGoals?.join(', ') || 'Not specified'}
+        - Time Horizon: ${riskProfile.timeHorizon || 'Not specified'}
+        - Experience Level: ${riskProfile.experienceLevel || 'Not specified'}
+        - Preferred Assets: ${riskProfile.preferredAssets?.join(', ') || 'Not specified'}
+        - Volatility Tolerance: ${riskProfile.volatilityTolerance || 'Not specified'}/10
+        - Income Requirement: ${riskProfile.incomeRequirement ? 'Yes' : 'No'}
+        - Rebalancing Frequency: ${riskProfile.rebalancingFrequency || 'Not specified'}
+        - Maximum Drawdown Tolerance: ${riskProfile.maxDrawdown || 'Not specified'}
+        - Target APY: ${riskProfile.targetAPY || 'Not specified'}
+    ` : '## User Risk Profile\n        - Not available. Use conservative recommendations by default.';
+
+    console.log('riskProfileText', riskProfileText);
     const result = streamText({
         model: openai('gpt-4o'),
         toolCallStreaming: true,
@@ -24,6 +55,14 @@ export async function POST(req: Request) {
         - Generate appropriate transaction suggestions based on user intent and risk profile
         - Explain complex DeFi concepts in simple, accessible language
         - Provide personalized portfolio insights and optimization suggestions
+
+        ## Risk Profile Guidelines:
+        - Always consider the user's risk profile when making recommendations
+        - Tailor your suggestions to match their risk tolerance level
+        - For conservative users: Emphasize safety, stable returns, and capital preservation
+        - For moderate users: Balance growth opportunities with reasonable risk management
+        - For aggressive users: Present higher-yield opportunities while still noting potential risks
+        - Never recommend strategies that significantly exceed the user's risk tolerance
 
         ## Personality Traits:
         - Knowledgeable but accessible: Explain complex topics clearly without being condescending
@@ -63,11 +102,13 @@ export async function POST(req: Request) {
         - Maintain conversation context to provide cohesive assistance
         - Track previous interactions within the session for continuity
 
-        # User details
+        ## User details
         - Name: ${user?.displayName || ''}
         - User ID: ${user!.id} (Never share this with the user)
         - Wallet address: ${userWalletAddress} (user's wallet address that they use to connect to the app)
         - AI Wallet address: ${aiWallet!.walletAddress} (AI wallet address associated with the user, use this to interact with the Aptos blockchain for default transactions like checking balance, sending tokens, etc.)
+
+        ${riskProfileText}
 
         When the information requested is outside your knowledge base or requires real-time data you don't have access to, acknowledge the limitation and suggest how the user might find that information.
 
