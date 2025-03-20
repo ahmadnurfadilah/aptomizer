@@ -4,6 +4,7 @@ import { getBalance } from '@/lib/tools/aptos/get-balance';
 import { getAiWallet, getUserByWalletAddress } from '@/lib/wallet-service';
 import { openai } from '@ai-sdk/openai';
 import { InvalidToolArgumentsError, NoSuchToolError, streamText, ToolExecutionError } from 'ai';
+import { getTransaction } from '@/lib/tools/aptos/get-transaction';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -50,6 +51,7 @@ export async function POST(req: Request) {
         toolCallStreaming: true,
         tools: {
             getBalance,
+            getTransaction,
             transferNFT,
             transferToken,
         },
