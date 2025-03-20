@@ -7,6 +7,7 @@ import { InvalidToolArgumentsError, NoSuchToolError, streamText, ToolExecutionEr
 import { getTransaction } from '@/lib/tools/aptos/get-transaction';
 import { getTokenPrice } from '@/lib/tools/aptos/get-token-price';
 import { getTokenDetails } from '@/lib/tools/aptos/get-token-details';
+import { panoraSwap } from '@/lib/tools/panora/swap';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -58,6 +59,7 @@ export async function POST(req: Request) {
             getTransaction,
             transferNFT,
             transferToken,
+            panoraSwap,
         },
         system: `You are AptoMizer, an AI-powered DeFi assistant specialized for the Aptos blockchain ecosystem. Your purpose is to help users manage their cryptocurrency portfolios, execute DeFi transactions, and make informed decisions through natural language interaction.
         ## Core Capabilities:
