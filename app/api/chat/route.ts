@@ -1,3 +1,4 @@
+import { transferNFT } from '@/lib/tools/aptos/transfer-nft';
 import { transferToken } from '@/lib/tools/aptos/transfer-token';
 import { getBalance } from '@/lib/tools/get-balance';
 import { getAiWallet, getUserByWalletAddress } from '@/lib/wallet-service';
@@ -49,6 +50,7 @@ export async function POST(req: Request) {
         toolCallStreaming: true,
         tools: {
             getBalance,
+            transferNFT,
             transferToken,
         },
         system: `You are AptoMizer, an AI-powered DeFi assistant specialized for the Aptos blockchain ecosystem. Your purpose is to help users manage their cryptocurrency portfolios, execute DeFi transactions, and make informed decisions through natural language interaction.
