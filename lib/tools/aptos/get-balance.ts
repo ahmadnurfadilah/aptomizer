@@ -1,6 +1,6 @@
 import { tool } from "ai";
 import { z } from "zod";
-import { getAptosAgent } from "../wallet-service";
+import { getAptosAgent } from "../../wallet-service";
 
 export const getBalance = tool({
   description: "Get the balance of a Aptos account",

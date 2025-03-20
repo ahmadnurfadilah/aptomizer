@@ -1,6 +1,6 @@
 import { transferNFT } from '@/lib/tools/aptos/transfer-nft';
 import { transferToken } from '@/lib/tools/aptos/transfer-token';
-import { getBalance } from '@/lib/tools/get-balance';
+import { getBalance } from '@/lib/tools/aptos/get-balance';
 import { getAiWallet, getUserByWalletAddress } from '@/lib/wallet-service';
 import { openai } from '@ai-sdk/openai';
 import { InvalidToolArgumentsError, NoSuchToolError, streamText, ToolExecutionError } from 'ai';
