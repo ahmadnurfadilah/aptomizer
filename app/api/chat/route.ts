@@ -1,3 +1,4 @@
+import { transferToken } from '@/lib/tools/aptos/transfer-token';
 import { getBalance } from '@/lib/tools/get-balance';
 import { getAiWallet, getUserByWalletAddress } from '@/lib/wallet-service';
 import { openai } from '@ai-sdk/openai';
@@ -48,6 +49,7 @@ export async function POST(req: Request) {
         toolCallStreaming: true,
         tools: {
             getBalance,
+            transferToken,
         },
         system: `You are AptoMizer, an AI-powered DeFi assistant specialized for the Aptos blockchain ecosystem. Your purpose is to help users manage their cryptocurrency portfolios, execute DeFi transactions, and make informed decisions through natural language interaction.
         ## Core Capabilities:
@@ -105,8 +107,8 @@ export async function POST(req: Request) {
         ## User details
         - Name: ${user?.displayName || ''}
         - User ID: ${user!.id} (Never share this with the user)
-        - Wallet address: ${userWalletAddress} (user's wallet address that they use to connect to the app)
-        - AI Wallet address: ${aiWallet!.walletAddress} (AI wallet address associated with the user, use this to interact with the Aptos blockchain for default transactions like checking balance, sending tokens, etc.)
+        - Wallet address: ${userWalletAddress} (user's wallet address that they use to connect to the app. Never use this address for any transactions, use the AI wallet address instead)
+        - AI Wallet address: ${aiWallet!.walletAddress} (AI wallet address associated with the user, use this to interact with the Aptos blockchain for default transactions like checking balance, sending tokens, etc. )
 
         ${riskProfileText}
 
