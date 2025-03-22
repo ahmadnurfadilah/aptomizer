@@ -12,10 +12,39 @@ import { OnboardingFlow } from "@/components/onboarding-flow";
 import { useWallet } from "@aptos-labs/wallet-adapter-react";
 import { useEffect, useState } from "react";
 import { WalletSelector } from "@/components/wallet-selector";
+import { JoulePoolsList } from "@/components/joule/pools-list";
+import { JoulePoolDetails } from "@/components/joule/pool-details";
+
+// Import the Pool types from the components
+import type { Pool } from "@/components/joule/pools-list";
+import type { PoolDetail } from "@/components/joule/pool-details";
+
+// Types for message parts and tool invocations
+interface MessagePart {
+  type: 'text' | 'tool-invocation';
+  text?: string;
+  toolInvocation?: ToolInvocation;
+}
+
+interface ToolInvocation {
+  toolName: string;
+  state: 'call' | 'result' | 'error';
+  args?: Record<string, string | number | boolean>;
+  result?: Record<string, unknown>;
+  error?: string;
+}
+
+interface Message {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  parts?: MessagePart[];
+  toolInvocations?: ToolInvocation[];
+}
 
 export default function Home() {
   const { account, connected } = useWallet();
-  const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(false);
+  // const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(false);
   const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState(false);
   const { messages, status, input, handleInputChange, handleSubmit } = useChat({
     body: {
@@ -39,12 +68,10 @@ export default function Home() {
     // We don't auto-submit to give user a chance to modify the suggestion if needed
   };
 
-  console.log(isCheckingOnboarding);
-
   useEffect(() => {
     const checkOnboardingStatus = async () => {
       if (connected && account?.address) {
-        setIsCheckingOnboarding(true);
+        // setIsCheckingOnboarding(true);
         try {
           const response = await fetch('/api/user/has-ai-wallet', {
             method: 'POST',
@@ -63,7 +90,7 @@ export default function Home() {
         } catch (error) {
           console.error("Error checking onboarding status:", error);
         } finally {
-          setIsCheckingOnboarding(false);
+          // setIsCheckingOnboarding(false);
         }
       } else {
         setHasCompletedOnboarding(false);
@@ -75,6 +102,65 @@ export default function Home() {
 
   const handleOnSubmit = (e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLDivElement>) => {
     handleSubmit(e);
+  };
+
+  // Helper to render message content
+  const renderMessageContent = (message: Message) => {
+    if (!message.parts || message.parts.length === 0) {
+      return <div dangerouslySetInnerHTML={{ __html: marked.parse(message.content) }} className="prose prose-p:text-sm prose-invert"></div>;
+    }
+
+    return message.parts.map((part: MessagePart, partIndex: number) => {
+      if (!message.toolInvocations && part.type === 'text' && part.text) {
+        return (
+          <div key={`text-${partIndex}`} dangerouslySetInnerHTML={{ __html: marked.parse(part.text) }} className="prose prose-p:text-sm prose-invert"></div>
+        );
+      } else if (part.type === 'tool-invocation' && part.toolInvocation) {
+        const toolInvocation = part.toolInvocation;
+
+        if (toolInvocation.toolName === 'jouleGetAllPools') {
+          switch (toolInvocation.state) {
+            case 'call':
+              return <div key={`tool-${partIndex}`} className="py-2">Fetching all Joule pools...</div>;
+            case 'result':
+              return (
+                <div key={`tool-${partIndex}`} className="py-2 w-full">
+                  <div className="prose prose-p:text-sm prose-invert">Here are the pools:</div>
+                  <JoulePoolsList pools={(toolInvocation.result?.pools as Pool[]) || []} />
+                </div>
+              );
+            default:
+              return null;
+          }
+        } else if (toolInvocation.toolName === 'jouleGetPoolDetails') {
+          switch (toolInvocation.state) {
+            case 'call':
+              return <div key={`tool-${partIndex}`} className="py-2">Fetching pool details for {toolInvocation.args?.mint || 'this pool'}...</div>;
+            case 'result':
+              return (
+                <div key={`tool-${partIndex}`} className="py-2 w-full">
+                  <div className="prose prose-p:text-sm prose-invert">Here is the pool details:</div>
+                  <JoulePoolDetails pool={(toolInvocation.result?.pool as PoolDetail)} />
+                </div>
+              );
+            default:
+              return null;
+          }
+        }
+
+        // For other tool invocations, simply display the result
+        return (
+          <div key={`tool-${partIndex}`} className="py-2">
+            {toolInvocation.state === 'result' && toolInvocation.result && (
+              <div className="text-sm text-gray-400 whitespace-pre-wrap font-mono bg-gray-800/50 p-2 rounded-md overflow-auto">
+                {JSON.stringify(toolInvocation.result, null, 2)}
+              </div>
+            )}
+          </div>
+        );
+      }
+      return null;
+    });
   };
 
   return (
@@ -128,23 +214,20 @@ export default function Home() {
           >
             <div className="max-w-2xl mx-auto w-full px-4">
               {messages.map((m, index) => (
-                <div className="flex items-end gap-2 mb-2" key={m.id}>
+                <div className="flex items-start gap-2 mb-2" key={m.id}>
                   {m.role === "assistant" && (
-                    <div className="size-8 rounded-full bg-white/10 shrink-0 flex items-center justify-center text-white/70">
+                    <div className="size-8 rounded-full bg-white/10 shrink-0 flex items-center justify-center text-white/70 mt-2">
                       {(status === 'submitted' || status === 'streaming') && index === messages.length - 1 ? <ThreeDotsLoading className="size-6" /> : <Bot size={16} />}
                     </div>
                   )}
                   <div className={`flex-1 flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
                     <div
-                      className={`relative overflow-hidden inline-block max-w-[80%] text-sm shadow-sm text-white/80 ${m.role === "user"
+                      className={`relative overflow-hidden inline-block max-w-[85%] text-sm shadow-sm text-white/80 ${m.role === "user"
                         ? "rounded-bl-2xl rounded-t-2xl bg-gradient-to-tr from-gray-900 to-gray-800 border border-gray-700 p-3"
-                        : "rounded-br-2xl"
+                        : "rounded-br-2xl rounded-t-2xl bg-gray-900/70 border border-gray-800 p-3 w-full"
                         }`}
                     >
-                      <div
-                        dangerouslySetInnerHTML={{ __html: marked.parse(m.content) }}
-                        className={`${m.role === "assistant" ? "prose prose-p:text-sm prose-invert" : ""}`}
-                      ></div>
+                      {renderMessageContent(m as Message)}
                     </div>
                   </div>
                 </div>

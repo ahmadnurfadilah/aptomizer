@@ -6,13 +6,12 @@ export const jouleGetAllPools = tool({
   parameters: z.object({}),
   execute: async () => {
     try {
-			const pools = await fetch("https://price-api.joule.finance/api/market");
-      const data = await pools.json();
+      const response = await fetch("https://price-api.joule.finance/api/market");
+      const pools = await response.json();
 
-      console.log("pools", data);
       return {
         status: "success",
-        pools: data,
+        pools: pools.data,
       };
     } catch (error: Error | unknown) {
       return {

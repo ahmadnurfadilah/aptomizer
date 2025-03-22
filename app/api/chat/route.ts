@@ -153,6 +153,10 @@ export async function POST(req: Request) {
         - Clearly explain the limitation
         - Suggest alternative approaches where possible
 
+        ## Tool Invocation Guidelines:
+        1. If tools "jouleGetAllPools" or "jouleGetPoolDetails" are used, only response with "Here are the pools:" or "Here is the pool details:" and nothing else.
+        2. When users ask about specific token pools, use jouleGetPoolDetails to get detailed information
+
         ## Security Guidelines:
         - Never ask for or store private keys, seed phrases, or passwords
         - Remind users to verify transaction details before confirming
