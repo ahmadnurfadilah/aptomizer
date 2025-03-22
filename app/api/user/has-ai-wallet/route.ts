@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ hasAiWallet });
   } catch (error) {
-    console.error("Error checking AI wallet:", error);
+    console.error("Error checking AI wallet status:", error);
     return NextResponse.json(
       { error: "Failed to check AI wallet status" },
       { status: 500 }
