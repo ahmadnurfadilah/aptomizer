@@ -14,6 +14,7 @@ import { useEffect, useState } from "react";
 import { WalletSelector } from "@/components/wallet-selector";
 import { JoulePoolsList } from "@/components/joule/pools-list";
 import { JoulePoolDetails } from "@/components/joule/pool-details";
+import { PortfolioVisualization } from "@/components/portfolio/portfolio-visualization";
 
 // Import the Pool types from the components
 import type { Pool } from "@/components/joule/pools-list";
@@ -40,6 +41,39 @@ interface Message {
   content: string;
   parts?: MessagePart[];
   toolInvocations?: ToolInvocation[];
+}
+
+// Portfolio data interface
+interface PortfolioAsset {
+  name: string;
+  symbol: string;
+  balance: number;
+  value: number;
+  priceUsd: number;
+  change24h: number | null;
+  apy: number | null;
+  logoUrl: string;
+}
+
+interface PortfolioStrategy {
+  name: string;
+  protocol: string;
+  balance: number;
+  value: number;
+  apy: number;
+  timeLeft: string | null;
+  health: string;
+}
+
+interface Portfolio {
+  aiWalletAddress: string;
+  totalValue: number;
+  change24h: number | null;
+  change7d: number | null;
+  change30d: number | null;
+  riskScore: number;
+  assets: PortfolioAsset[];
+  strategies: PortfolioStrategy[];
 }
 
 export default function Home() {
@@ -146,6 +180,27 @@ export default function Home() {
             default:
               return null;
           }
+        } else if (toolInvocation.toolName === 'getPortfolio') {
+          switch (toolInvocation.state) {
+            case 'call':
+              return <div key={`tool-${partIndex}`} className="py-2">Fetching your portfolio data...</div>;
+            case 'result':
+              if (toolInvocation.result?.status === 'success' && toolInvocation.result?.portfolio) {
+                return (
+                  <div key={`tool-${partIndex}`} className="py-2 w-full">
+                    <PortfolioVisualization portfolio={toolInvocation.result.portfolio as Portfolio} />
+                  </div>
+                );
+              } else {
+                return (
+                  <div key={`tool-${partIndex}`} className="py-2 text-red-400">
+                    Unable to fetch portfolio data: {(toolInvocation.result?.message as string) || 'Unknown error'}
+                  </div>
+                );
+              }
+            default:
+              return null;
+          }
         }
 
         // For other tool invocations, simply display the result
@@ -224,7 +279,7 @@ export default function Home() {
                     <div
                       className={`relative overflow-hidden inline-block max-w-[85%] text-sm shadow-sm text-white/80 ${m.role === "user"
                         ? "rounded-bl-2xl rounded-t-2xl bg-gradient-to-tr from-gray-900 to-gray-800 border border-gray-700 p-3"
-                        : "rounded-br-2xl rounded-t-2xl bg-gray-900/70 border border-gray-800 p-3 w-full"
+                        : "py-3 w-full"
                         }`}
                     >
                       {renderMessageContent(m as Message)}
