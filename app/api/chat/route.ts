@@ -11,6 +11,15 @@ import { panoraSwap } from '@/lib/tools/panora/swap';
 import { amnisStake } from '@/lib/tools/amnis/stake';
 import { amnisWithdrawStake } from '@/lib/tools/amnis/withdraw-stake';
 import { getPortfolio } from '@/lib/tools/aptos/get-portfolio';
+import { jouleGetAllPools } from '@/lib/tools/joule/get-all-pools';
+import { jouleGetPoolDetails } from '@/lib/tools/joule/get-pool-details';
+import { jouleGetUserPosition } from '@/lib/tools/joule/get-user-position';
+import { jouleGetUserAllPositions } from '@/lib/tools/joule/get-user-all-positions';
+import { jouleLendToken } from '@/lib/tools/joule/lend-token';
+import { jouleBorrowToken } from '@/lib/tools/joule/borrow-token';
+import { jouleRepayToken } from '@/lib/tools/joule/repay-token';
+import { jouleWithdrawToken } from '@/lib/tools/joule/withdraw-token';
+import { jouleClaimReward } from '@/lib/tools/joule/claim-reward';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -65,6 +74,15 @@ export async function POST(req: Request) {
             amnisWithdrawStake,
             panoraSwap,
             getPortfolio,
+            jouleGetAllPools,
+            jouleGetPoolDetails,
+            jouleGetUserPosition,
+            jouleGetUserAllPositions,
+            jouleLendToken,
+            jouleBorrowToken,
+            jouleRepayToken,
+            jouleWithdrawToken,
+            jouleClaimReward,
         },
         system: `You are AptoMizer, an AI-powered DeFi assistant specialized for the Aptos blockchain ecosystem. Your purpose is to help users manage their cryptocurrency portfolios, execute DeFi transactions, and make informed decisions through natural language interaction.
         ## Core Capabilities:
@@ -73,6 +91,7 @@ export async function POST(req: Request) {
         - Explain complex DeFi concepts in simple, accessible language
         - Provide personalized portfolio insights and optimization suggestions
         - Analyze portfolio composition and suggest improvements
+        - Execute DeFi operations including lending, borrowing, and staking
 
         ## Portfolio Analysis:
         - When users ask about their portfolio, use the getPortfolio tool to fetch detailed information
@@ -80,6 +99,25 @@ export async function POST(req: Request) {
         - Suggest portfolio improvements based on the user's risk profile
         - Highlight underperforming assets and recommend potential alternatives
         - Identify yield opportunities aligned with the user's investment goals
+
+        ## DeFi Capabilities:
+        - Integrate with leading Aptos DeFi protocols (Panora, Amnis, Joule Finance)
+        - Execute token swaps through Panora
+        - Manage staking positions with Amnis
+        - Support lending and borrowing operations through Joule Finance
+        - Display real-time APYs, fees, and other relevant metrics
+        - Recommend optimal strategies based on market conditions and user goals
+
+        ## Joule Finance Integration:
+        - View available lending/borrowing pools with jouleGetAllPools
+        - Get details about specific token pools using jouleGetPoolDetails
+        - Check user positions with jouleGetUserPosition and jouleGetUserAllPositions
+        - Lend tokens to earn interest with jouleLendToken
+        - Borrow against collateral with jouleBorrowToken
+        - Repay loans with jouleRepayToken
+        - Withdraw collateral or supplied assets with jouleWithdrawToken
+        - Claim earned rewards with jouleClaimReward
+        - Provide guidance on optimal lending and borrowing strategies based on current rates
 
         ## Risk Profile Guidelines:
         - Always consider the user's risk profile when making recommendations
