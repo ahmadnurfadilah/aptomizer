@@ -44,13 +44,6 @@ interface PortfolioData {
   strategies: Strategy[];
 }
 
-// Mock optimization opportunities for now
-const mockOpportunities = [
-  { title: "APT Liquid Staking", description: "Convert APT to sAPT for 3.2% higher yield while maintaining liquidity.", potentialGain: "+$17.61/year", risk: "Low" },
-  { title: "USDC Lending", description: "Lend your USDC for 6.2% APY on AnimeSwap.", potentialGain: "+$21.71/year", risk: "Low-Medium" },
-  { title: "Swap to Stable LP", description: "Convert 50% of your APT to USDC and provide liquidity for more stable returns.", potentialGain: "+$32.40/year", risk: "Medium" }
-];
-
 // Add a search component for assets
 const AssetSearch = ({ onSearch }: { onSearch: (query: string) => void }) => {
   const [query, setQuery] = useState("");
@@ -260,6 +253,20 @@ const AssetSortDropdown = ({
   );
 };
 
+// Inside the Dashboard component, add this utility function to calculate the total optimization potential
+const calculateTotalOptimizationPotential = (opportunities: { potentialGain: string }[]): string => {
+  if (!opportunities || opportunities.length === 0) return "0.00";
+
+  // Sum up all potential gains
+  const totalPotential = opportunities.reduce((sum, opportunity) => {
+    // Extract the number from potentialGain string (e.g., "+$32.40/year" -> 32.40)
+    const gainValue = parseFloat(opportunity.potentialGain.replace('+$', '').replace('/year', ''));
+    return sum + gainValue;
+  }, 0);
+
+  return totalPotential.toFixed(2);
+};
+
 export default function Dashboard() {
   const { account, connected } = useWallet();
   const [isLoadingData, setIsLoadingData] = useState(true);
@@ -274,6 +281,15 @@ export default function Dashboard() {
   });
   const [aiWalletAddress, setAiWalletAddress] = useState<string | null>(null);
   const [hasAiWallet, setHasAiWallet] = useState<boolean>(true);
+  const [optimizationOpportunities, setOptimizationOpportunities] = useState<{
+    title: string;
+    description: string;
+    potentialGain: string;
+    risk: string;
+    apy?: number;
+    protocol?: string;
+  }[]>([]);
+  const [isLoadingOpportunities, setIsLoadingOpportunities] = useState(false);
 
   // Filter and sort assets based on search query and sort option
   useEffect(() => {
@@ -317,6 +333,36 @@ export default function Dashboard() {
     setFilteredAssets(assets);
   }, [portfolioData?.assets, portfolioData?.totalValue, assetSearchQuery, sortOption]);
 
+  const fetchOptimizationOpportunities = async () => {
+    if (!connected || !account?.address) {
+      return;
+    }
+
+    setIsLoadingOpportunities(true);
+    try {
+      const response = await fetch('/api/user/optimization', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ walletAddress: account.address.toString() }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch optimization opportunities');
+      }
+
+      const data = await response.json();
+      setOptimizationOpportunities(data);
+    } catch (error) {
+      console.error('Error fetching optimization opportunities:', error);
+      // Fall back to an empty array, or provide default opportunities if needed
+      setOptimizationOpportunities([]);
+    } finally {
+      setIsLoadingOpportunities(false);
+    }
+  };
+
   const fetchPortfolioData = async () => {
     if (!connected || !account?.address) {
       setIsLoadingData(false);
@@ -346,6 +392,9 @@ export default function Dashboard() {
       setPortfolioData(data);
       setAiWalletAddress(data.aiWalletAddress);
       setHasAiWallet(true);
+
+      // After getting portfolio data, fetch optimization opportunities
+      await fetchOptimizationOpportunities();
     } catch (error) {
       console.error('Error fetching portfolio data:', error);
       if (error instanceof Error && error.message !== "AI wallet not found") {
@@ -497,7 +546,11 @@ export default function Dashboard() {
                     <CardTitle className="text-sm font-medium text-gray-400">Optimization Potential</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">+$71.72/yr</div>
+                    {isLoadingOpportunities ? (
+                      <div className="animate-pulse h-8 bg-gray-800 rounded w-3/4"></div>
+                    ) : (
+                      <div className="text-2xl font-bold">+${calculateTotalOptimizationPotential(optimizationOpportunities)}/yr</div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
@@ -786,37 +839,69 @@ export default function Dashboard() {
               <div>
                 <h2 className="text-xl font-bold mb-4">Optimization Opportunities</h2>
                 <div className="space-y-4">
-                  {mockOpportunities.map((opportunity, index) => (
-                    <Card key={index} className="bg-black/20 backdrop-blur-sm border border-white/10">
-                      <CardHeader className="pb-2">
-                        <div className="flex justify-between items-start">
-                          <CardTitle className="text-base font-bold">
-                            <span className="flex items-center">
-                              <Zap className="size-4 text-yellow-500 mr-2" />
-                              {opportunity.title}
-                            </span>
-                          </CardTitle>
-                          <span className="text-green-500 text-sm font-medium">{opportunity.potentialGain}</span>
-                        </div>
-                        <CardDescription className="mt-2">{opportunity.description}</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="flex justify-between items-center">
-                          <div className="text-xs text-gray-400">
-                            Risk: <span className={cn(
-                              opportunity.risk === "Low" ? "text-green-400" :
-                              opportunity.risk === "Low-Medium" ? "text-blue-400" :
-                              opportunity.risk === "Medium" ? "text-yellow-400" :
-                              "text-orange-400"
-                            )}>{opportunity.risk}</span>
+                  {isLoadingOpportunities ? (
+                    // Loading state for opportunities
+                    <div className="space-y-4">
+                      {[1, 2, 3].map(i => (
+                        <Card key={i} className="bg-black/20 backdrop-blur-sm border border-white/10">
+                          <CardHeader className="pb-2">
+                            <div className="animate-pulse h-5 bg-gray-700 rounded w-3/4 mb-2"></div>
+                            <div className="animate-pulse h-4 bg-gray-700 rounded w-full"></div>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="flex justify-between items-center">
+                              <div className="animate-pulse h-3 bg-gray-700 rounded w-1/3"></div>
+                              <div className="animate-pulse h-8 bg-gray-700 rounded-full w-24"></div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  ) : optimizationOpportunities.length > 0 ? (
+                    // Real optimization opportunities
+                    optimizationOpportunities.map((opportunity, index) => (
+                      <Card key={index} className="bg-black/20 backdrop-blur-sm border border-white/10">
+                        <CardHeader className="pb-2">
+                          <div className="flex justify-between items-start">
+                            <CardTitle className="text-base font-bold">
+                              <span className="flex items-center">
+                                <Zap className="size-4 text-yellow-500 mr-2" />
+                                {opportunity.title}
+                              </span>
+                            </CardTitle>
+                            <span className="text-green-500 text-sm font-medium">{opportunity.potentialGain}</span>
                           </div>
-                          <button className="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-full text-xs transition">
-                            Apply Strategy
-                          </button>
-                        </div>
+                          <CardDescription className="mt-2">{opportunity.description}</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="flex justify-between items-center">
+                            <div className="text-xs text-gray-400">
+                              Risk: <span className={cn(
+                                opportunity.risk === "Low" ? "text-green-400" :
+                                opportunity.risk === "Low-Medium" ? "text-blue-400" :
+                                opportunity.risk === "Medium" ? "text-yellow-400" :
+                                opportunity.risk === "Medium-High" ? "text-orange-400" :
+                                "text-red-400"
+                              )}>{opportunity.risk}</span>
+                              {opportunity.apy && (
+                                <span className="ml-2">• APY: <span className="text-green-400">{opportunity.apy}%</span></span>
+                              )}
+                            </div>
+                            <button className="px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-full text-xs transition">
+                              Apply Strategy
+                            </button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))
+                  ) : (
+                    // No opportunities found
+                    <Card className="bg-black/20 backdrop-blur-sm border border-white/10">
+                      <CardContent className="p-6 text-center">
+                        <p className="text-gray-400">No optimization opportunities found for your current portfolio.</p>
                       </CardContent>
                     </Card>
-                  ))}
+                  )}
                 </div>
               </div>
             </div>
