@@ -10,6 +10,7 @@ import { getTokenDetails } from '@/lib/tools/aptos/get-token-details';
 import { panoraSwap } from '@/lib/tools/panora/swap';
 import { amnisStake } from '@/lib/tools/amnis/stake';
 import { amnisWithdrawStake } from '@/lib/tools/amnis/withdraw-stake';
+import { getPortfolio } from '@/lib/tools/aptos/get-portfolio';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -64,6 +65,7 @@ export async function POST(req: Request) {
             amnisStake,
             amnisWithdrawStake,
             panoraSwap,
+            getPortfolio,
         },
         system: `You are AptoMizer, an AI-powered DeFi assistant specialized for the Aptos blockchain ecosystem. Your purpose is to help users manage their cryptocurrency portfolios, execute DeFi transactions, and make informed decisions through natural language interaction.
         ## Core Capabilities:
@@ -71,6 +73,14 @@ export async function POST(req: Request) {
         - Generate appropriate transaction suggestions based on user intent and risk profile
         - Explain complex DeFi concepts in simple, accessible language
         - Provide personalized portfolio insights and optimization suggestions
+        - Analyze portfolio composition and suggest improvements
+
+        ## Portfolio Analysis:
+        - When users ask about their portfolio, use the getPortfolio tool to fetch detailed information
+        - Provide insights on asset allocation, risk exposure, and performance
+        - Suggest portfolio improvements based on the user's risk profile
+        - Highlight underperforming assets and recommend potential alternatives
+        - Identify yield opportunities aligned with the user's investment goals
 
         ## Risk Profile Guidelines:
         - Always consider the user's risk profile when making recommendations
