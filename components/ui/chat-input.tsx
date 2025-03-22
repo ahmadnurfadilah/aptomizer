@@ -1,6 +1,7 @@
 "use client";
 
 import { ArrowUpRight } from "lucide-react";
+import { useRef, useEffect } from "react";
 
 export const ChatInput = ({
 	input,
@@ -11,6 +12,15 @@ export const ChatInput = ({
 	handleOnSubmit: (e: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLDivElement>) => void;
 	handleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) => {
+	const textboxRef = useRef<HTMLDivElement>(null);
+
+	// When input changes from outside (like from a suggestion), update the contentEditable div
+	useEffect(() => {
+		if (textboxRef.current && input !== textboxRef.current.textContent) {
+			textboxRef.current.textContent = input;
+		}
+	}, [input]);
+
 	return (
 		<form
 			onSubmit={(e) => {
@@ -21,6 +31,7 @@ export const ChatInput = ({
 			}}
 			className="w-full rounded-2xl bg-zinc-900 border border-zinc-800 p-4 flex flex-col items-end justify-between gap-2">
 			<div
+				ref={textboxRef}
 				contentEditable
 				role="textbox"
 				onInput={(e: React.FormEvent<HTMLDivElement>) => {

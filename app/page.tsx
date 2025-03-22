@@ -2,9 +2,10 @@
 
 import ThreeDotsLoading from "@/components/icon/three-dots-loading";
 import { ChatInput } from "@/components/ui/chat-input";
+import { ChatSuggestions } from "@/components/ui/chat-suggestions";
 import { Spotlight } from "@/components/ui/spotlight";
 import { useChat } from "@ai-sdk/react";
-import { Bot } from "lucide-react";
+import { Bot, LineChart, SendToBack, Wallet } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { marked } from "marked";
 import { OnboardingFlow } from "@/components/onboarding-flow";
@@ -22,6 +23,21 @@ export default function Home() {
     },
     maxSteps: 5,
   });
+
+  const chatSuggestions = [
+    { text: "What's in my portfolio?", icon: <LineChart size={16} /> },
+    { text: "Show me my transaction history", icon: <SendToBack size={16} /> },
+    { text: "How can I stake APT?", icon: <Wallet size={16} /> },
+    { text: "What are the best yield opportunities?", icon: <LineChart size={16} /> },
+    { text: "Swap tokens", icon: <Wallet size={16} /> },
+    { text: "Explain how liquidity pools work", icon: <Bot size={16} /> },
+    { text: "What are the risks of DeFi?", icon: <Bot size={16} /> },
+  ];
+
+  const handleSuggestionSelect = (suggestion: string) => {
+    handleInputChange({ target: { value: suggestion } } as React.ChangeEvent<HTMLInputElement>);
+    // We don't auto-submit to give user a chance to modify the suggestion if needed
+  };
 
   console.log(isCheckingOnboarding);
 
@@ -157,6 +173,11 @@ export default function Home() {
               </div>
 
               <ChatInput input={input} handleOnSubmit={handleOnSubmit} handleInputChange={handleInputChange} />
+
+              <ChatSuggestions
+                suggestions={chatSuggestions}
+                onSelect={handleSuggestionSelect}
+              />
             </div>
           </motion.div>
         )}

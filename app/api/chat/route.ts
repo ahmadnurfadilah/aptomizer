@@ -51,7 +51,6 @@ export async function POST(req: Request) {
         - Target APY: ${riskProfile.targetAPY || 'Not specified'}
     ` : '## User Risk Profile\n        - Not available. Use conservative recommendations by default.';
 
-    console.log('riskProfileText', riskProfileText);
     const result = streamText({
         model: openai('gpt-4o'),
         toolCallStreaming: true,
