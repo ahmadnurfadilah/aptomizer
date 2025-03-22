@@ -495,18 +495,24 @@ export default function Dashboard() {
               <div className="mb-6">
                 <h2 className="text-3xl font-bold">${formatCurrency(portfolioData?.totalValue || 0)}</h2>
                 <div className="flex items-center gap-2 mt-1">
-                  <span className={cn("flex items-center text-sm", getValueColorClass(portfolioData?.change24h || 0))}>
-                    {(portfolioData?.change24h || 0) >= 0 ? <ArrowUpRight className="size-3 mr-1" /> : <ArrowDownRight className="size-3 mr-1" />}
-                    {formatPercentage(portfolioData?.change24h || 0)} (24h)
-                  </span>
-                  <span className={cn("flex items-center text-sm", getValueColorClass(portfolioData?.change7d || 0))}>
-                    {(portfolioData?.change7d || 0) >= 0 ? <ArrowUpRight className="size-3 mr-1" /> : <ArrowDownRight className="size-3 mr-1" />}
-                    {formatPercentage(portfolioData?.change7d || 0)} (7d)
-                  </span>
-                  <span className={cn("flex items-center text-sm", getValueColorClass(portfolioData?.change30d || 0))}>
-                    {(portfolioData?.change30d || 0) >= 0 ? <ArrowUpRight className="size-3 mr-1" /> : <ArrowDownRight className="size-3 mr-1" />}
-                    {formatPercentage(portfolioData?.change30d || 0)} (30d)
-                  </span>
+                  {portfolioData?.change24h !== null && (
+                    <span className={cn("flex items-center text-sm", getValueColorClass(portfolioData?.change24h || 0))}>
+                      {(portfolioData?.change24h || 0) >= 0 ? <ArrowUpRight className="size-3 mr-1" /> : <ArrowDownRight className="size-3 mr-1" />}
+                      {formatPercentage(portfolioData?.change24h || 0)} (24h)
+                    </span>
+                  )}
+                  {portfolioData?.change7d !== null && (
+                    <span className={cn("flex items-center text-sm", getValueColorClass(portfolioData?.change7d || 0))}>
+                      {(portfolioData?.change7d || 0) >= 0 ? <ArrowUpRight className="size-3 mr-1" /> : <ArrowDownRight className="size-3 mr-1" />}
+                      {formatPercentage(portfolioData?.change7d || 0)} (7d)
+                    </span>
+                  )}
+                  {portfolioData?.change30d !== null && (
+                    <span className={cn("flex items-center text-sm", getValueColorClass(portfolioData?.change30d || 0))}>
+                      {(portfolioData?.change30d || 0) >= 0 ? <ArrowUpRight className="size-3 mr-1" /> : <ArrowDownRight className="size-3 mr-1" />}
+                      {formatPercentage(portfolioData?.change30d || 0)} (30d)
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -644,9 +650,16 @@ export default function Dashboard() {
                                 <div className="text-xs text-gray-400">Best Performer</div>
                                 {portfolioData?.assets && portfolioData.assets.length > 0 ? (
                                   <div className="font-medium">
-                                    {portfolioData.assets.reduce((best, asset) =>
-                                      (asset.change24h > best.change24h) ? asset : best
-                                    ).symbol}
+                                    {(() => {
+                                      // Filter assets with non-null change24h
+                                      const assetsWithChange = portfolioData.assets.filter(a => a.change24h !== null);
+                                      if (assetsWithChange.length === 0) {
+                                        return "N/A";
+                                      }
+                                      return assetsWithChange.reduce((best, asset) =>
+                                        ((asset.change24h || 0) > (best.change24h || 0)) ? asset : best
+                                      ).symbol;
+                                    })()}
                                   </div>
                                 ) : (
                                   <div>-</div>
@@ -657,9 +670,16 @@ export default function Dashboard() {
                                 <div className="text-xs text-gray-400">Worst Performer</div>
                                 {portfolioData?.assets && portfolioData.assets.length > 0 ? (
                                   <div className="font-medium">
-                                    {portfolioData.assets.reduce((worst, asset) =>
-                                      (asset.change24h < worst.change24h) ? asset : worst
-                                    ).symbol}
+                                    {(() => {
+                                      // Filter assets with non-null change24h
+                                      const assetsWithChange = portfolioData.assets.filter(a => a.change24h !== null);
+                                      if (assetsWithChange.length === 0) {
+                                        return "N/A";
+                                      }
+                                      return assetsWithChange.reduce((worst, asset) =>
+                                        ((asset.change24h || 0) < (worst.change24h || 0)) ? asset : worst
+                                      ).symbol;
+                                    })()}
                                   </div>
                                 ) : (
                                   <div>-</div>
@@ -721,12 +741,6 @@ export default function Dashboard() {
                                   <div className="text-right">${formatCurrency(asset.priceUsd, 2, 6)}</div>
                                   <div className="text-right">${formatCurrency(asset.value)}</div>
                                   <div className="text-right text-blue-400 flex items-center justify-end">
-                                    {/* <div className="w-16 bg-gray-800 h-1.5 mr-2 rounded-full overflow-hidden">
-                                      <div
-                                        className="h-full bg-blue-500 rounded-full"
-                                        style={{ width: `${(asset.value / (portfolioData?.totalValue || 1)) * 100}%` }}
-                                      ></div>
-                                    </div> */}
                                     {formatPortfolioPercentage(asset.value, portfolioData?.totalValue || 1)}
                                   </div>
                                 </div>
@@ -773,6 +787,16 @@ export default function Dashboard() {
                                         <div className="text-sm text-gray-400">Price</div>
                                         <div className="font-medium">${formatCurrency(asset.priceUsd, 2, 6)}</div>
                                       </div>
+
+                                      {asset.change24h !== null && (
+                                        <div className="flex justify-between items-center">
+                                          <div className="text-sm text-gray-400">24h Change</div>
+                                          <div className={cn("font-medium", getValueColorClass(asset.change24h))}>
+                                            {formatPercentage(asset.change24h)}
+                                          </div>
+                                        </div>
+                                      )}
+
                                       <div className="flex justify-between items-center mt-2 pt-2 border-t border-gray-800">
                                         <div className="text-sm text-gray-400">Value</div>
                                         <div className="font-bold">${formatCurrency(asset.value)}</div>

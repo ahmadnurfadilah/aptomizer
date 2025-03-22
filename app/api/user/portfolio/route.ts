@@ -21,7 +21,7 @@ interface Asset {
   balance: number;
   value: number;
   priceUsd: number;
-  change24h: number;
+  change24h: number | null;
   apy: number | null;
   logoUrl: string;
 }
@@ -39,9 +39,9 @@ interface Strategy {
 interface PortfolioData {
   aiWalletAddress: string;
   totalValue: number;
-  change24h: number;
-  change7d: number;
-  change30d: number;
+  change24h: number | null;
+  change7d: number | null;
+  change30d: number | null;
   riskScore: number;
   assets: Asset[];
   strategies: Strategy[];
@@ -156,7 +156,7 @@ export async function POST(request: NextRequest) {
           balance: aptBalanceInAptos,
           value: aptValue,
           priceUsd: aptPrice,
-          change24h: 2.5, // Mock change data
+          change24h: null, // Set to null instead of mock data
           apy: null,
           logoUrl: aptLogoUrl,
         });
@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
               balance: balance,
               value: value,
               priceUsd: price,
-              change24h: (Math.random() * 10) - 5, // Random change between -5% and 5%
+              change24h: null, // Set to null instead of random mock data
               apy: null,
               logoUrl: logoUrl,
             });
@@ -240,9 +240,9 @@ export async function POST(request: NextRequest) {
     const portfolioData: PortfolioData = {
       aiWalletAddress: aiWallet.walletAddress,
       totalValue,
-      change24h: 2.5, // Mock change data
-      change7d: -1.2, // Mock change data
-      change30d: 8.7, // Mock change data
+      change24h: null, // Set to null instead of mock data
+      change7d: null, // Set to null instead of mock data
+      change30d: null, // Set to null instead of mock data
       riskScore: user.riskProfile?.riskTolerance ? user.riskProfile.riskTolerance * 10 : 50,
       assets,
       strategies: []

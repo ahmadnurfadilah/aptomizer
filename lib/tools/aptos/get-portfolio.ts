@@ -9,7 +9,7 @@ interface Asset {
   balance: number;
   value: number;
   priceUsd: number;
-  change24h: number;
+  change24h: number | null;
   apy: number | null;
   logoUrl: string;
 }
@@ -27,9 +27,9 @@ interface Strategy {
 interface PortfolioData {
   aiWalletAddress: string;
   totalValue: number;
-  change24h: number;
-  change7d: number;
-  change30d: number;
+  change24h: number | null;
+  change7d: number | null;
+  change30d: number | null;
   riskScore: number;
   assets: Asset[];
   strategies: Strategy[];
