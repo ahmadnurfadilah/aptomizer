@@ -5,12 +5,12 @@ import { ChatInput } from "@/components/ui/chat-input";
 import { ChatSuggestions } from "@/components/ui/chat-suggestions";
 import { Spotlight } from "@/components/ui/spotlight";
 import { useChat } from "@ai-sdk/react";
-import { Bot, LineChart, SendToBack, Wallet } from "lucide-react";
+import { Bot, LineChart, Wallet } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { marked } from "marked";
 import { OnboardingFlow } from "@/components/onboarding-flow";
 import { useWallet } from "@aptos-labs/wallet-adapter-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { WalletSelector } from "@/components/wallet-selector";
 import { JoulePoolsList } from "@/components/joule/pools-list";
 import { JoulePoolDetails } from "@/components/joule/pool-details";
@@ -158,9 +158,18 @@ export default function Home() {
     maxSteps: 5,
   });
 
+  // Add a reference to the chat container
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  // Add auto-scroll effect when messages change or status changes
   useEffect(() => {
-    console.log(messages);
-  }, [messages]);
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
+  }, [messages, status]);
 
   const chatSuggestions = [
     { text: "What's in my portfolio?", icon: <LineChart size={16} /> },
@@ -752,6 +761,7 @@ export default function Home() {
             key="chat"
             className="w-full min-h-screen overflow-y-auto pb-28 pt-20"
             id="chat-container"
+            ref={chatContainerRef}
           >
             <div className="max-w-2xl mx-auto w-full px-4">
               {messages.map((m, index) => (

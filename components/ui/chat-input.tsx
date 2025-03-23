@@ -46,6 +46,35 @@ export const ChatInput = ({
 						(e.target as HTMLDivElement).innerHTML = '';
 					}
 				}}
+				onPaste={(e) => {
+					// Prevent the default paste behavior
+					e.preventDefault();
+
+					// Get plain text from clipboard
+					const text = e.clipboardData.getData('text/plain');
+
+					// Insert text at cursor position
+					const selection = window.getSelection();
+					if (selection && selection.rangeCount > 0) {
+						const range = selection.getRangeAt(0);
+						range.deleteContents();
+						range.insertNode(document.createTextNode(text));
+
+						// Move cursor to end of inserted text
+						range.setStartAfter(range.endContainer);
+						range.collapse(true);
+						selection.removeAllRanges();
+						selection.addRange(range);
+					} else {
+						// Fallback if selection API doesn't work
+						(e.target as HTMLDivElement).textContent += text;
+					}
+
+					// Update input state
+					handleInputChange({
+						target: { value: (e.target as HTMLDivElement).textContent || '' }
+					} as React.ChangeEvent<HTMLInputElement>);
+				}}
 				data-placeholder="Send message to AptoMizer..."
 				className={`overflow-y-auto max-h-12 whitespace-pre-wrap relative w-full focus:border-none focus:outline-0 focus:ring-0 text-sm before:text-zinc-600 before:absolute before:left-0 before:top-0 before:pointer-events-none empty:before:content-[attr(data-placeholder)]`}
 			></div>
