@@ -18,6 +18,8 @@ export const jouleGetUserPosition = tool({
 
 			const jouleUserPosition = await aptosAgent.getUserPosition(userAddress, positionId)
 
+      console.log(JSON.stringify(jouleUserPosition, null, 2));
+
       return {
         status: "success",
         jouleUserPosition,

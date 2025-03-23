@@ -16,6 +16,8 @@ import { JoulePoolsList } from "@/components/joule/pools-list";
 import { JoulePoolDetails } from "@/components/joule/pool-details";
 import { PortfolioVisualization } from "@/components/portfolio/portfolio-visualization";
 import { YieldOpportunitiesList, YieldOpportunity } from "@/components/joule/yield-opportunities";
+import { JouleUserPosition, UserPosition } from "@/components/joule/user-position";
+import { JouleUserPositionsList, PositionSummary } from "@/components/joule/user-positions-list";
 
 // Import the Pool types from the components
 import type { Pool } from "@/components/joule/pools-list";
@@ -77,6 +79,74 @@ interface Portfolio {
   strategies: PortfolioStrategy[];
 }
 
+// Define interfaces for API responses
+
+// Token type for jouleGetUserAllPositions
+interface TokenInfo {
+  name: string;
+  decimals: number;
+  tokenAddress: string;
+}
+
+// Define interfaces for Joule API responses
+
+// Extended interfaces for the new position format
+interface LendPosition {
+  key: string; // token address
+  value: string; // amount as string
+}
+
+interface BorrowPosition {
+  key: string; // token address
+  value: string; // amount as string
+}
+
+interface JoulePositionData {
+  key: string; // position ID
+  value: {
+    lend_positions?: {
+      data: LendPosition[];
+    };
+    borrow_positions?: {
+      data: BorrowPosition[];
+    };
+    position_name?: string;
+  };
+}
+
+interface JoulePosition {
+  positions_map: {
+    data: JoulePositionData[];
+  };
+  user_position_ids: string[];
+}
+
+// Original position data format for jouleGetUserPosition
+interface PositionData {
+  uid: string;
+  poolId: string;
+  mintAddress?: string;
+  owner?: string;
+  health?: string;
+  borrowed?: string;
+  borrowedUsd?: string;
+  supplied?: string;
+  suppliedUsd?: string;
+  collateral?: string;
+  collateralUsd?: string;
+}
+
+// Position data from jouleGetUserPosition
+interface UserPositionData extends PositionData {
+  tokenName?: string;
+  tokenSymbol?: string;
+  tokenLogo?: string;
+  liquidationThreshold?: string;
+  maxLtv?: string;
+  borrowLimit?: string;
+  borrowLimitUsed?: string;
+}
+
 export default function Home() {
   const { account, connected } = useWallet();
   // const [isCheckingOnboarding, setIsCheckingOnboarding] = useState(false);
@@ -95,6 +165,7 @@ export default function Home() {
   const chatSuggestions = [
     { text: "What's in my portfolio?", icon: <LineChart size={16} /> },
     { text: "Show me my transaction history", icon: <SendToBack size={16} /> },
+    { text: "Show me my Joule Finance positions", icon: <Wallet size={16} /> },
     { text: "How can I stake APT?", icon: <Wallet size={16} /> },
     { text: "What are the best yield opportunities?", icon: <LineChart size={16} /> },
     { text: "Swap tokens", icon: <Wallet size={16} /> },
@@ -164,7 +235,7 @@ export default function Home() {
             case 'result':
               return (
                 <div key={`tool-${partIndex}`} className="py-0 w-full">
-                  <div className="prose prose-p:text-sm prose-invert">Here are the pools:</div>
+                  <div className="prose prose-p:text-sm prose-invert mb-2 text-sm">Here are the pools:</div>
                   <JoulePoolsList pools={(toolInvocation.result?.pools as Pool[]) || []} />
                 </div>
               );
@@ -178,7 +249,7 @@ export default function Home() {
             case 'result':
               return (
                 <div key={`tool-${partIndex}`} className="py-0 w-full">
-                  <div className="prose prose-p:text-sm prose-invert">Here is the pool details:</div>
+                  <div className="prose prose-p:text-sm prose-invert mb-2 text-sm">Here is the pool details:</div>
                   <JoulePoolDetails pool={(toolInvocation.result?.pool as PoolDetail)} />
                 </div>
               );
@@ -209,7 +280,7 @@ export default function Home() {
 
                 return (
                   <div key={`tool-${partIndex}`} className="py-0 w-full">
-                    <div className="prose prose-p:text-sm prose-invert">Here are the best yield opportunities for your profile:</div>
+                    <div className="prose prose-p:text-sm prose-invert mb-2 text-sm">Here are the best yield opportunities for your profile:</div>
                     <YieldOpportunitiesList
                       opportunities={opportunities}
                       riskProfileApplied={riskProfileApplied}
@@ -221,6 +292,383 @@ export default function Home() {
                 return (
                   <div key={`tool-${partIndex}`} className="py-2 text-red-400">
                     Unable to find yield opportunities: {(toolInvocation.result?.message as string) || 'Unknown error'}
+                  </div>
+                );
+              }
+            default:
+              return null;
+          }
+        } else if (toolInvocation.toolName === 'jouleGetUserAllPositions') {
+          switch (toolInvocation.state) {
+            case 'call':
+              return <div key={`tool-${partIndex}`} className="py-0">Fetching your Joule Finance positions...</div>;
+            case 'result':
+              if (toolInvocation.result?.status === 'success' && toolInvocation.result?.jouleUserAllPositions) {
+                // Get the user positions data from the API response
+                const positionsData = toolInvocation.result.jouleUserAllPositions as JoulePosition[];
+                const tokens = toolInvocation.result.tokens as TokenInfo[] || [];
+
+                // Process the positions data to create a list of positions
+                const positions: PositionSummary[] = [];
+
+                // Parse the new positions format
+                for (const positionWrapper of positionsData) {
+                  if (!positionWrapper.positions_map?.data) continue;
+
+                  // Loop through each position in the positions_map
+                  for (const positionEntry of positionWrapper.positions_map.data) {
+                    const positionId = positionEntry.key;
+                    const positionDetails = positionEntry.value;
+
+                    // Process lend positions
+                    if (positionDetails.lend_positions?.data) {
+                      for (const lendPosition of positionDetails.lend_positions.data) {
+                        const tokenAddress = lendPosition.key;
+                        const amount = lendPosition.value;
+
+                        // Find the token details
+                        const token = tokens.find(t => t.tokenAddress === tokenAddress);
+                        if (!token) continue;
+
+                        // Calculate values
+                        const amountNumber = parseFloat(amount) / Math.pow(10, token.decimals);
+                        // We don't have USD values in this response, but we can estimate
+                        const estimatedUsdValue = amountNumber * 10; // Placeholder - replace with actual price
+
+                        positions.push({
+                          positionId,
+                          poolId: tokenAddress,
+                          tokenName: token.name,
+                          tokenSymbol: token.name,
+                          supplied: amountNumber,
+                          suppliedUsd: estimatedUsdValue,
+                          borrowed: 0,
+                          borrowedUsd: 0,
+                          collateral: 0,
+                          collateralUsd: 0,
+                          health: 2.0, // Default healthy
+                          healthStatus: 'Healthy'
+                        });
+                      }
+                    }
+
+                    // Process borrow positions
+                    if (positionDetails.borrow_positions?.data) {
+                      for (const borrowPosition of positionDetails.borrow_positions.data) {
+                        const tokenAddress = borrowPosition.key;
+                        const amount = borrowPosition.value;
+
+                        // Find the token details
+                        const token = tokens.find(t => t.tokenAddress === tokenAddress);
+                        if (!token) continue;
+
+                        // Find if we already have a position for this token
+                        const existingPosition = positions.find(p =>
+                          p.positionId === positionId && p.poolId === tokenAddress
+                        );
+
+                        const amountNumber = parseFloat(amount) / Math.pow(10, token.decimals);
+                        const estimatedUsdValue = amountNumber * 10; // Placeholder
+
+                        if (existingPosition) {
+                          // Update existing position
+                          existingPosition.borrowed = amountNumber;
+                          existingPosition.borrowedUsd = estimatedUsdValue;
+                          // Update health calculation
+                          if (existingPosition.suppliedUsd > 0) {
+                            const health = existingPosition.suppliedUsd / existingPosition.borrowedUsd;
+                            existingPosition.health = health;
+                            if (health < 1.1) {
+                              existingPosition.healthStatus = 'Danger';
+                            } else if (health < 1.25) {
+                              existingPosition.healthStatus = 'Warning';
+                            }
+                          }
+                        } else {
+                          // Create new position for borrow-only
+                          positions.push({
+                            positionId,
+                            poolId: tokenAddress,
+                            tokenName: token.name,
+                            tokenSymbol: token.name,
+                            supplied: 0,
+                            suppliedUsd: 0,
+                            borrowed: amountNumber,
+                            borrowedUsd: estimatedUsdValue,
+                            collateral: 0,
+                            collateralUsd: 0,
+                            health: 1.5, // Default medium
+                            healthStatus: 'Warning'
+                          });
+                        }
+                      }
+                    }
+                  }
+                }
+
+                // Add position name if available
+                for (const positionWrapper of positionsData) {
+                  if (!positionWrapper.positions_map?.data) continue;
+
+                  for (const positionEntry of positionWrapper.positions_map.data) {
+                    const positionId = positionEntry.key;
+                    const positionDetails = positionEntry.value;
+
+                    // Find all positions with this ID and add position name
+                    if (positionDetails.position_name) {
+                      for (const position of positions) {
+                        if (position.positionId === positionId) {
+                          position.tokenName = `${position.tokenName} (${positionDetails.position_name})`;
+                        }
+                      }
+                    }
+                  }
+                }
+
+                // Get user's wallet address to include in the query for position details
+                const handlePositionSelect = (positionId: string) => {
+                  // Create a message asking for details about this specific position
+                  const message = `Show me details for my position ${positionId}`;
+
+                  // Set the input and submit
+                  handleInputChange({ target: { value: message } } as React.ChangeEvent<HTMLInputElement>);
+                  const fakeEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
+                  handleOnSubmit(fakeEvent);
+                };
+
+                // If no positions were found, show empty state
+                if (positions.length === 0) {
+                  return (
+                    <div key={`tool-${partIndex}`} className="py-0 w-full">
+                      <div className="prose prose-p:text-sm prose-invert mb-2 text-sm">You don&apos;t have any active positions on Joule Finance.</div>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div key={`tool-${partIndex}`} className="py-0 w-full">
+                    <div className="prose prose-p:text-sm prose-invert mb-2 text-sm">Here are your positions on Joule Finance:</div>
+                    <JouleUserPositionsList
+                      positions={positions}
+                      onPositionSelect={handlePositionSelect}
+                    />
+                  </div>
+                );
+              } else {
+                return (
+                  <div key={`tool-${partIndex}`} className="py-2 text-red-400">
+                    Unable to fetch your positions: {(toolInvocation.result?.message as string) || 'Unknown error'}
+                  </div>
+                );
+              }
+            default:
+              return null;
+          }
+        } else if (toolInvocation.toolName === 'jouleGetUserPosition') {
+          switch (toolInvocation.state) {
+            case 'call':
+              return <div key={`tool-${partIndex}`} className="py-0">Fetching position details...</div>;
+            case 'result':
+              if (toolInvocation.result?.status === 'success' && toolInvocation.result?.jouleUserPosition) {
+                try {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  const positionData = toolInvocation.result.jouleUserPosition as any;
+
+                  // Check if the response is an array (new format)
+                  if (Array.isArray(positionData) && positionData.length > 0) {
+                    const positionEntry = positionData[0]; // Take the first position from array
+
+                    // Find the token information
+                    const tokens = toolInvocation.result.tokens as TokenInfo[] || [];
+                    let tokenName = 'Unknown';
+                    let tokenSymbol = 'UNKNOWN';
+                    let tokenDecimals = 8;
+
+                    // Calculate supplied and borrowed amounts
+                    let supplied = 0;
+                    let borrowed = 0;
+                    const collateral = 0;
+
+                    // Extract position name
+                    const positionName = positionEntry.position_name || '';
+
+                    // Get token data from lend positions
+                    let tokenAddress = '';
+
+                    if (positionEntry.lend_positions?.data && positionEntry.lend_positions.data.length > 0) {
+                      const lendPosition = positionEntry.lend_positions.data[0];
+                      tokenAddress = lendPosition.key;
+                      const amount = lendPosition.value;
+
+                      // Find token details - add fallback for common tokens
+                      const token = tokens?.find(t => t.tokenAddress === tokenAddress);
+                      if (token) {
+                        tokenName = token.name;
+                        tokenSymbol = token.name;
+                        tokenDecimals = token.decimals;
+                      } else if (tokenAddress === "0x1::aptos_coin::AptosCoin") {
+                        // Fallback for APT token
+                        tokenName = "Aptos Coin";
+                        tokenSymbol = "APT";
+                        tokenDecimals = 8;
+                      }
+
+                      // Convert amount to decimal based on token decimals
+                      supplied = parseFloat(amount) / Math.pow(10, tokenDecimals);
+                    }
+
+                    if (positionEntry.borrow_positions?.data && positionEntry.borrow_positions.data.length > 0) {
+                      const borrowPosition = positionEntry.borrow_positions.data[0];
+                      const borrowTokenAddress = borrowPosition.key;
+                      const amount = borrowPosition.value;
+
+                      // If no lend position was found, use the borrow position for token info
+                      if (!tokenAddress) {
+                        tokenAddress = borrowTokenAddress;
+                        const token = tokens?.find(t => t.tokenAddress === tokenAddress);
+                        if (token) {
+                          tokenName = token.name;
+                          tokenSymbol = token.name;
+                          tokenDecimals = token.decimals;
+                        } else if (tokenAddress === "0x1::aptos_coin::AptosCoin") {
+                          // Fallback for APT token
+                          tokenName = "Aptos Coin";
+                          tokenSymbol = "APT";
+                          tokenDecimals = 8;
+                        }
+                      }
+
+                      // Calculate borrowed amount
+                      borrowed = parseFloat(amount) / Math.pow(10, tokenDecimals);
+                    }
+
+                    // Generate a position ID if not available
+                    const positionId = tokenAddress || 'position-1';
+
+                    // Calculate USD values (placeholder)
+                    const suppliedUsd = supplied * 10; // Placeholder price
+                    const borrowedUsd = borrowed * 10; // Placeholder price
+                    const collateralUsd = collateral * 10; // Placeholder price
+
+                    // Calculate health and status
+                    let health = 2.0; // Default
+                    let healthStatus: 'Healthy' | 'Warning' | 'Danger' = 'Healthy';
+
+                    if (borrowed > 0 && supplied > 0) {
+                      health = suppliedUsd / borrowedUsd;
+                      if (health < 1.1) {
+                        healthStatus = 'Danger';
+                      } else if (health < 1.25) {
+                        healthStatus = 'Warning';
+                      }
+                    }
+
+                    // Create position object
+                    const position: UserPosition = {
+                      positionId,
+                      owner: 'N/A',
+                      poolId: tokenAddress,
+                      tokenName: positionName ? `${tokenName} (${positionName})` : tokenName,
+                      tokenSymbol,
+                      borrowed,
+                      borrowedUsd,
+                      supplied,
+                      suppliedUsd,
+                      collateral,
+                      collateralUsd,
+                      health,
+                      liquidationThreshold: 0.85,
+                      maxLtv: 0.7,
+                      healthStatus,
+                      borrowLimit: suppliedUsd * 0.7,
+                      borrowLimitUsed: suppliedUsd > 0 ? (borrowedUsd / (suppliedUsd * 0.7)) * 100 : 0
+                    };
+
+                    return (
+                      <div key={`tool-${partIndex}`} className="py-0 w-full">
+                        <div className="prose prose-p:text-sm prose-invert mb-2 text-sm">Here are the details for your position:</div>
+                        <JouleUserPosition position={position} />
+                      </div>
+                    );
+                  } else {
+                    // Handle older formats or unexpected response
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                    const positionDataObj = positionData as Record<string, any>;
+                    let position: UserPosition | null = null;
+
+                    if (positionDataObj.positions_map && positionDataObj.positions_map.data && positionDataObj.positions_map.data.length > 0) {
+                      // This is in the format with positions_map
+                      // Process as before...
+                      // Code for handling positions_map format
+
+                      // Return error as fallback for now
+                      return (
+                        <div key={`tool-${partIndex}`} className="py-2 text-red-400">
+                          Unable to parse position details. Please update the code to handle positions_map format.
+                        </div>
+                      );
+                    } else if (positionDataObj.uid) {
+                      // This is in the original format
+                      const pData = positionDataObj as unknown as UserPositionData;
+
+                      // Calculate health status based on health score
+                      const health = parseFloat(pData.health || '0');
+                      let healthStatus: 'Healthy' | 'Warning' | 'Danger' = 'Healthy';
+
+                      if (health < 1.1) {
+                        healthStatus = 'Danger';
+                      } else if (health < 1.25) {
+                        healthStatus = 'Warning';
+                      }
+
+                      // Format the data for our component
+                      position = {
+                        positionId: pData.uid,
+                        owner: pData.owner || '',
+                        poolId: pData.poolId,
+                        tokenName: pData.tokenName || 'Unknown',
+                        tokenSymbol: pData.tokenSymbol || 'UNKNOWN',
+                        tokenLogo: pData.tokenLogo,
+                        borrowed: parseFloat(pData.borrowed || '0'),
+                        borrowedUsd: parseFloat(pData.borrowedUsd || '0'),
+                        supplied: parseFloat(pData.supplied || '0'),
+                        suppliedUsd: parseFloat(pData.suppliedUsd || '0'),
+                        collateral: parseFloat(pData.collateral || '0'),
+                        collateralUsd: parseFloat(pData.collateralUsd || '0'),
+                        health,
+                        liquidationThreshold: parseFloat(pData.liquidationThreshold || '0') / 100,
+                        maxLtv: parseFloat(pData.maxLtv || '0') / 100,
+                        healthStatus,
+                        borrowLimit: parseFloat(pData.borrowLimit || '0'),
+                        borrowLimitUsed: parseFloat(pData.borrowLimitUsed || '0')
+                      };
+
+                      return (
+                        <div key={`tool-${partIndex}`} className="py-0 w-full">
+                          <div className="prose prose-p:text-sm prose-invert mb-2 text-sm">Here are the details for your position:</div>
+                          <JouleUserPosition position={position} />
+                        </div>
+                      );
+                    } else {
+                      return (
+                        <div key={`tool-${partIndex}`} className="py-2 text-red-400">
+                          Unable to parse position details. Unexpected response format.
+                        </div>
+                      );
+                    }
+                  }
+                } catch (error) {
+                  console.error("Error parsing position data:", error);
+                  return (
+                    <div key={`tool-${partIndex}`} className="py-2 text-red-400">
+                      Error processing position details: {error instanceof Error ? error.message : 'Unknown error'}
+                    </div>
+                  );
+                }
+              } else {
+                return (
+                  <div key={`tool-${partIndex}`} className="py-2 text-red-400">
+                    Unable to fetch position details: {(toolInvocation.result?.message as string) || 'Unknown error'}
                   </div>
                 );
               }
