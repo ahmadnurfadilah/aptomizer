@@ -136,7 +136,6 @@ export function OnboardingFlow() {
       setAiWalletAddress(walletData.aiWallet.walletAddress);
       setPrivateKey(walletData.aiWallet.privateKey);
       setShowSuccessModal(true);
-      setHasAiWallet(true);
     } catch (error) {
       console.error("Error creating AI wallet:", error);
       toast.error("Failed to create AI wallet");
@@ -155,6 +154,7 @@ export function OnboardingFlow() {
   const closeSuccessModal = () => {
     setShowSuccessModal(false);
     setPrivateKey("");
+    setHasAiWallet(true);
   };
 
   if (isLoading) {
