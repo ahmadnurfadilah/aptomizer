@@ -15,6 +15,7 @@ import { WalletSelector } from "@/components/wallet-selector";
 import { JoulePoolsList } from "@/components/joule/pools-list";
 import { JoulePoolDetails } from "@/components/joule/pool-details";
 import { PortfolioVisualization } from "@/components/portfolio/portfolio-visualization";
+import { YieldOpportunitiesList, YieldOpportunity } from "@/components/joule/yield-opportunities";
 
 // Import the Pool types from the components
 import type { Pool } from "@/components/joule/pools-list";
@@ -177,6 +178,39 @@ export default function Home() {
                   <JoulePoolDetails pool={(toolInvocation.result?.pool as PoolDetail)} />
                 </div>
               );
+            default:
+              return null;
+          }
+        } else if (toolInvocation.toolName === 'jouleYieldOpportunities') {
+          switch (toolInvocation.state) {
+            case 'call':
+              return <div key={`tool-${partIndex}`} className="py-2">Finding the best yield opportunities for you...</div>;
+            case 'result':
+              if (toolInvocation.result?.status === 'success' && toolInvocation.result?.opportunities) {
+                const opportunities = toolInvocation.result.opportunities as YieldOpportunity[];
+                const riskProfileApplied = toolInvocation.result.riskProfileApplied as {
+                  riskTolerance: number;
+                  timeHorizon: string;
+                  minAPY: number;
+                  preferredAssets: string[];
+                };
+
+                return (
+                  <div key={`tool-${partIndex}`} className="py-2 w-full">
+                    <div className="prose prose-p:text-sm prose-invert">Here are the best yield opportunities for your profile:</div>
+                    <YieldOpportunitiesList
+                      opportunities={opportunities}
+                      riskProfileApplied={riskProfileApplied}
+                    />
+                  </div>
+                );
+              } else {
+                return (
+                  <div key={`tool-${partIndex}`} className="py-2 text-red-400">
+                    Unable to find yield opportunities: {(toolInvocation.result?.message as string) || 'Unknown error'}
+                  </div>
+                );
+              }
             default:
               return null;
           }

@@ -20,6 +20,7 @@ import { jouleBorrowToken } from '@/lib/tools/joule/borrow-token';
 import { jouleRepayToken } from '@/lib/tools/joule/repay-token';
 import { jouleWithdrawToken } from '@/lib/tools/joule/withdraw-token';
 import { jouleClaimReward } from '@/lib/tools/joule/claim-reward';
+import { jouleYieldOpportunities } from '@/lib/tools/joule/yield-opportunities';
 
 // Allow streaming responses up to 30 seconds
 export const maxDuration = 30;
@@ -83,6 +84,7 @@ export async function POST(req: Request) {
             jouleRepayToken,
             jouleWithdrawToken,
             jouleClaimReward,
+            jouleYieldOpportunities,
         },
         system: `You are AptoMizer, an AI-powered DeFi assistant specialized for the Aptos blockchain ecosystem. Your purpose is to help users manage their cryptocurrency portfolios, execute DeFi transactions, and make informed decisions through natural language interaction.
         ## Core Capabilities:
@@ -118,6 +120,13 @@ export async function POST(req: Request) {
         - Withdraw collateral or supplied assets with jouleWithdrawToken
         - Claim earned rewards with jouleClaimReward
         - Provide guidance on optimal lending and borrowing strategies based on current rates
+
+        ## Yield Opportunities:
+        - When users ask about yield opportunities, use the jouleYieldOpportunities tool to find personalized recommendations
+        - Pass the user's risk profile parameters to ensure recommendations match their preferences
+        - Consider preferred assets, risk tolerance, and time horizon when suggesting yield strategies
+        - Explain the risk-reward tradeoffs for each opportunity
+        - If user doesn't specify parameters, use their stored risk profile
 
         ## Risk Profile Guidelines:
         - Always consider the user's risk profile when making recommendations
@@ -156,6 +165,9 @@ export async function POST(req: Request) {
         ## Tool Invocation Guidelines:
         1. If tools "jouleGetAllPools" or "jouleGetPoolDetails" are used, only response with "Here are the pools:" or "Here is the pool details:" and nothing else.
         2. When users ask about specific token pools, use jouleGetPoolDetails to get detailed information
+        3. When users ask about yield opportunities or best investment options:
+           - Use jouleYieldOpportunities with parameters from their risk profile
+           - If user asks "What are the best yield opportunities?", respond with only "Here are the best yield opportunities for your profile:" and show results
 
         ## Security Guidelines:
         - Never ask for or store private keys, seed phrases, or passwords
