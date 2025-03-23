@@ -1,8 +1,67 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Aptomizer
+
+Aptomizer is an AI-powered portfolio management and optimization tool for the Aptos blockchain. It provides users with a smart assistant that can analyze portfolios, suggest yield opportunities, and execute transactions on the Aptos blockchain.
+
+## Features
+
+- **AI-Powered Assistant**: Chat with an AI assistant that understands your portfolio and can help optimize it
+- **Wallet Integration**: Connect your Aptos wallet or let the AI create a managed wallet for you
+- **Portfolio Analysis**: View your token balances, total value, and performance metrics
+- **Yield Opportunities**: Discover and compare yield farming, staking, and lending opportunities
+- **Transaction Execution**: Execute transactions directly through the AI assistant (token transfers, staking, etc.)
+- **Risk Assessment**: Get insights into the risk level of your portfolio and strategies
+
+## Tech Stack
+
+- **Frontend**: Next.js 15 (App Router), Tailwind CSS, Shadcn UI, Radix UI
+- **AI**: Vercel AI SDK, OpenAI API
+- **Blockchain**: Aptos SDK, Move Agent Kit
+- **Database**: Prisma, PostgreSQL (via Supabase)
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+ and npm/yarn/pnpm
+- An OpenAI API key
+- Aptos wallet (optional for connecting existing wallet)
+
+### Environment Setup
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/aptomizer.git
+   cd aptomizer
+   ```
+
+2. Install dependencies:
+   ```bash
+   npm install
+   # or
+   yarn install
+   # or
+   pnpm install
+   ```
+
+3. Copy the `.env.example` file to `.env.local` and fill in your environment variables:
+   ```
+   OPENAI_API_KEY=your_openai_api_key
+   ENCRYPTION_KEY=your_secure_encryption_key
+   PANORA_API_KEY=your_panora_api_key
+   DATABASE_URL=your_database_url
+   DIRECT_URL=your_direct_database_url
+   NEXT_PUBLIC_BASE_URL=http://localhost:3000
+   NETWORK=mainnet  # or testnet for development
+   ```
+
+4. Set up the database with Prisma:
+   ```bash
+   npx prisma db push
+   ```
+
+### Running the Application
+
+Run the development server:
 
 ```bash
 npm run dev
@@ -10,27 +69,26 @@ npm run dev
 yarn dev
 # or
 pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the application.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Usage
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. **Connect Your Wallet**: Use the wallet selector to connect your existing Aptos wallet
+2. **Create an AI Wallet**: The onboarding flow can create a managed AI wallet for you
+3. **Chat with the AI**: Ask questions about your portfolio, get recommendations, and execute transactions
+4. **Explore Features**: Navigate through portfolio visualization, yield opportunities, and position management
 
-## Learn More
+## Security
 
-To learn more about Next.js, take a look at the following resources:
+This application handles private keys for AI-managed wallets. In production, ensure:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- The `ENCRYPTION_KEY` is a strong, unique value
+- Database access is properly secured
+- All communications occur over HTTPS
+- Private keys are properly encrypted at rest
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## License
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+This project is licensed under the MIT License.
