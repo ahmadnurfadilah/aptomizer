@@ -164,9 +164,8 @@ export default function Home() {
 
   const chatSuggestions = [
     { text: "What's in my portfolio?", icon: <LineChart size={16} /> },
-    { text: "Show me my transaction history", icon: <SendToBack size={16} /> },
     { text: "Show me my Joule Finance positions", icon: <Wallet size={16} /> },
-    { text: "How can I stake APT?", icon: <Wallet size={16} /> },
+    { text: "I want to stake APT", icon: <Wallet size={16} /> },
     { text: "What are the best yield opportunities?", icon: <LineChart size={16} /> },
     { text: "Swap tokens", icon: <Wallet size={16} /> },
     { text: "Explain how liquidity pools work", icon: <Bot size={16} /> },
