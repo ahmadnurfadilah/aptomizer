@@ -73,6 +73,25 @@ interface CoinStoreResource {
   };
 }
 
+// Define interface for Joule market data
+interface JouleMarketData {
+  priceInfo?: {
+    tokenAddress: string;
+    price: number;
+  };
+  asset?: {
+    type: string;
+    name: string;
+    symbol: string;
+  };
+  depositApy: number;
+  borrowApy: number;
+  extraAPY?: {
+    depositAPY: string;
+    borrowAPY: string;
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { walletAddress } = await request.json();
@@ -240,43 +259,149 @@ export async function POST(request: NextRequest) {
     const portfolioData: PortfolioData = {
       aiWalletAddress: aiWallet.walletAddress,
       totalValue,
-      change24h: null, // Set to null instead of mock data
-      change7d: null, // Set to null instead of mock data
-      change30d: null, // Set to null instead of mock data
+      change24h: null,
+      change7d: null,
+      change30d: null,
       riskScore: user.riskProfile?.riskTolerance ? user.riskProfile.riskTolerance * 10 : 50,
       assets,
       strategies: []
     };
 
-    // Add mock strategies if needed
-    if (aptBalanceInAptos > 0 && assets.length > 0) {
-      // Add APT staking strategy if APT balance exists
-      const aptToken = assets.find(a => a.symbol === "APT");
-      if (aptToken) {
-        portfolioData.strategies.push({
-          name: "APT Staking",
-          protocol: "Aptos Stake",
-          balance: aptBalanceInAptos * 0.1, // Mock 10% of APT is staked
-          value: aptBalanceInAptos * 0.1 * aptToken.priceUsd,
-          apy: 5.2,
-          timeLeft: null,
-          health: "Excellent"
-        });
+    // Fetch market data from Joule Finance to get real APY values
+    let marketData: JouleMarketData[] = [];
+    try {
+      const marketResponse = await axios.get("https://price-api.joule.finance/api/market");
+      if (marketResponse.data?.data && Array.isArray(marketResponse.data.data)) {
+        marketData = marketResponse.data.data as JouleMarketData[];
       }
+    } catch (error) {
+      console.error("Error fetching Joule market data:", error);
+      // Continue without market data, we'll use fallbacks
+    }
 
-      // Add LP strategy if user has multiple tokens
-      if (assets.length >= 2) {
-        const liquidityToken = assets.find(a => a.symbol !== "APT") || assets[1];
-        portfolioData.strategies.push({
-          name: `APT-${liquidityToken.symbol} Liquidity`,
-          protocol: "TortugaFinance",
-          balance: liquidityToken.balance * 0.2, // Mock 20% of token is in LP
-          value: liquidityToken.value * 0.2,
-          apy: 12.8,
-          timeLeft: null,
-          health: "Good"
-        });
+    // Helper function to find APY data for a specific token
+    const findApyData = (tokenAddress: string) => {
+      const pool = marketData.find(item =>
+        item.priceInfo?.tokenAddress === tokenAddress ||
+        item.asset?.type === tokenAddress
+      );
+
+      return {
+        depositApy: pool?.depositApy || 0,
+        borrowApy: pool?.borrowApy || 0,
+        extraDepositApy: pool?.extraAPY?.depositAPY ? parseFloat(pool.extraAPY.depositAPY) : 0
+      };
+    };
+
+    // Fetch user positions from Joule Finance
+    try {
+      // Use agent to fetch user positions from Joule Finance
+      // The agent already has the account address properly configured when it was created
+      // so we can use the agent's account address directly
+      const joulePositions = await agent.getUserAllPositions(agent.account.getAddress());
+
+      if (joulePositions && joulePositions.length > 0 && joulePositions[0].positions_map?.data) {
+        // Process each position and add as a strategy
+        for (const positionEntry of joulePositions[0].positions_map.data) {
+          // We don't need positionId but we keep the line for clarity
+          const positionDetails = positionEntry.value;
+          const positionName = positionDetails.position_name || 'Joule Position';
+
+          // Process lend positions
+          if (positionDetails.lend_positions?.data && positionDetails.lend_positions.data.length > 0) {
+            for (const lendPosition of positionDetails.lend_positions.data) {
+              const tokenAddress = lendPosition.key;
+              const amount = lendPosition.value;
+
+              // Find token info
+              const tokenInfo = tokenList.find(t => t.tokenAddress === tokenAddress);
+              const tokenSymbol = tokenInfo?.symbol || getTokenSymbolFromCoinType(tokenAddress);
+              const tokenDecimals = tokenInfo?.decimals || 8;
+
+              // Calculate values
+              const balance = Number(amount) / Math.pow(10, tokenDecimals);
+
+              // Skip if balance is 0
+              if (balance <= 0) continue;
+
+              // Get token price if possible
+              let price = 0;
+              try {
+                const priceResult = await agent.getTokenPrice(tokenSymbol);
+                price = Number(priceResult.length > 0 ? priceResult[0].price : 0);
+              } catch (error) {
+                console.error(`Error fetching price for ${tokenSymbol}:`, error);
+              }
+
+              // Calculate value
+              const value = balance * price;
+
+              // Get APY data for this token
+              const apyData = findApyData(tokenAddress);
+              const totalApy = apyData.depositApy + apyData.extraDepositApy;
+
+              // Add as a strategy
+              portfolioData.strategies.push({
+                name: `${positionName} (Lend)`,
+                protocol: "Joule Finance",
+                balance: balance,
+                value: value,
+                apy: totalApy > 0 ? totalApy : 0.5, // Use real APY with fallback
+                timeLeft: null,
+                health: totalApy > 0 ? "Healthy" : "Neutral"
+              });
+            }
+          }
+
+          // Process borrow positions
+          if (positionDetails.borrow_positions?.data && positionDetails.borrow_positions.data.length > 0) {
+            for (const borrowPosition of positionDetails.borrow_positions.data) {
+              const tokenAddress = borrowPosition.key;
+              const amount = borrowPosition.value;
+
+              // Find token info
+              const tokenInfo = tokenList.find(t => t.tokenAddress === tokenAddress);
+              const tokenSymbol = tokenInfo?.symbol || getTokenSymbolFromCoinType(tokenAddress);
+              const tokenDecimals = tokenInfo?.decimals || 8;
+
+              // Calculate values
+              const balance = Number(amount) / Math.pow(10, tokenDecimals);
+
+              // Skip if balance is 0
+              if (balance <= 0) continue;
+
+              // Get token price if possible
+              let price = 0;
+              try {
+                const priceResult = await agent.getTokenPrice(tokenSymbol);
+                price = Number(priceResult.length > 0 ? priceResult[0].price : 0);
+              } catch (error) {
+                console.error(`Error fetching price for ${tokenSymbol}:`, error);
+              }
+
+              // Calculate value
+              const value = balance * price;
+
+              // Get APY data for this token
+              const apyData = findApyData(tokenAddress);
+
+              // Add as a strategy with "Borrow" and with a status of "Warning" since it's a debt
+              portfolioData.strategies.push({
+                name: `${positionName} (Borrow)`,
+                protocol: "Joule Finance",
+                balance: balance,
+                value: value,
+                apy: apyData.borrowApy > 0 ? -apyData.borrowApy : -1.5, // Negative APY to indicate cost of borrowing
+                timeLeft: null,
+                health: "Warning"
+              });
+            }
+          }
+        }
       }
+    } catch (error) {
+      console.error("Error fetching Joule positions:", error);
+      // If there's an error, we continue without adding strategies
     }
 
     // Sort assets by value (highest first)
