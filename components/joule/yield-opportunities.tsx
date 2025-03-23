@@ -27,9 +27,14 @@ interface YieldOpportunitiesListProps {
     minAPY: number;
     preferredAssets: string[];
   };
+  onActionClick?: (message: string) => void;
 }
 
-export function YieldOpportunitiesList({ opportunities, riskProfileApplied }: YieldOpportunitiesListProps) {
+export function YieldOpportunitiesList({
+  opportunities,
+  riskProfileApplied,
+  onActionClick
+}: YieldOpportunitiesListProps) {
   // Verify we have valid data
   const validOpportunities = Array.isArray(opportunities) ? opportunities : [];
 
@@ -47,6 +52,14 @@ export function YieldOpportunitiesList({ opportunities, riskProfileApplied }: Yi
     timeHorizon: riskProfileApplied?.timeHorizon || 'Medium',
     minAPY: riskProfileApplied?.minAPY || 0,
     preferredAssets: Array.isArray(riskProfileApplied?.preferredAssets) ? riskProfileApplied.preferredAssets : [],
+  };
+
+  // Handler for action button click
+  const handleActionClick = (opportunity: YieldOpportunity) => {
+    if (onActionClick) {
+      const message = `I want to deposit into ${opportunity.asset.symbol} on Joule Finance with ${formatPercent(opportunity.depositAPY/100)} APY`;
+      onActionClick(message);
+    }
   };
 
   return (
@@ -124,7 +137,11 @@ export function YieldOpportunitiesList({ opportunities, riskProfileApplied }: Yi
 
               {/* Action column */}
               <div className="col-span-2 sm:col-span-1 text-right">
-                <button className="text-blue-400 hover:text-blue-300 p-1 rounded-full hover:bg-blue-500/10">
+                <button
+                  onClick={() => handleActionClick(opportunity)}
+                  className="text-blue-400 hover:text-blue-300 p-1 rounded-full hover:bg-blue-500/10"
+                  aria-label={`Deposit ${opportunity.asset.symbol}`}
+                >
                   <ArrowRightIcon size={14} />
                 </button>
               </div>

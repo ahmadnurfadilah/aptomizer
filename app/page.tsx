@@ -88,6 +88,10 @@ export default function Home() {
     maxSteps: 5,
   });
 
+  useEffect(() => {
+    console.log(messages);
+  }, [messages]);
+
   const chatSuggestions = [
     { text: "What's in my portfolio?", icon: <LineChart size={16} /> },
     { text: "Show me my transaction history", icon: <SendToBack size={16} /> },
@@ -156,10 +160,10 @@ export default function Home() {
         if (toolInvocation.toolName === 'jouleGetAllPools') {
           switch (toolInvocation.state) {
             case 'call':
-              return <div key={`tool-${partIndex}`} className="py-2">Fetching all Joule pools...</div>;
+              return <div key={`tool-${partIndex}`} className="py-0">Fetching all Joule pools...</div>;
             case 'result':
               return (
-                <div key={`tool-${partIndex}`} className="py-2 w-full">
+                <div key={`tool-${partIndex}`} className="py-0 w-full">
                   <div className="prose prose-p:text-sm prose-invert">Here are the pools:</div>
                   <JoulePoolsList pools={(toolInvocation.result?.pools as Pool[]) || []} />
                 </div>
@@ -170,10 +174,10 @@ export default function Home() {
         } else if (toolInvocation.toolName === 'jouleGetPoolDetails') {
           switch (toolInvocation.state) {
             case 'call':
-              return <div key={`tool-${partIndex}`} className="py-2">Fetching pool details for {toolInvocation.args?.mint || 'this pool'}...</div>;
+              return <div key={`tool-${partIndex}`} className="py-0">Fetching pool details for {toolInvocation.args?.mint || 'this pool'}...</div>;
             case 'result':
               return (
-                <div key={`tool-${partIndex}`} className="py-2 w-full">
+                <div key={`tool-${partIndex}`} className="py-0 w-full">
                   <div className="prose prose-p:text-sm prose-invert">Here is the pool details:</div>
                   <JoulePoolDetails pool={(toolInvocation.result?.pool as PoolDetail)} />
                 </div>
@@ -184,7 +188,7 @@ export default function Home() {
         } else if (toolInvocation.toolName === 'jouleYieldOpportunities') {
           switch (toolInvocation.state) {
             case 'call':
-              return <div key={`tool-${partIndex}`} className="py-2">Finding the best yield opportunities for you...</div>;
+              return <div key={`tool-${partIndex}`} className="py-0">Finding the best yield opportunities for you...</div>;
             case 'result':
               if (toolInvocation.result?.status === 'success' && toolInvocation.result?.opportunities) {
                 const opportunities = toolInvocation.result.opportunities as YieldOpportunity[];
@@ -195,12 +199,21 @@ export default function Home() {
                   preferredAssets: string[];
                 };
 
+                const handleYieldActionClick = (message: string) => {
+                  // Set the user's input to the message text
+                  handleInputChange({ target: { value: message } } as React.ChangeEvent<HTMLInputElement>);
+                  // Create a fake event and call the component's handleOnSubmit function
+                  const fakeEvent = { preventDefault: () => {} } as React.FormEvent<HTMLFormElement>;
+                  handleOnSubmit(fakeEvent);
+                };
+
                 return (
-                  <div key={`tool-${partIndex}`} className="py-2 w-full">
+                  <div key={`tool-${partIndex}`} className="py-0 w-full">
                     <div className="prose prose-p:text-sm prose-invert">Here are the best yield opportunities for your profile:</div>
                     <YieldOpportunitiesList
                       opportunities={opportunities}
                       riskProfileApplied={riskProfileApplied}
+                      onActionClick={handleYieldActionClick}
                     />
                   </div>
                 );
@@ -217,11 +230,11 @@ export default function Home() {
         } else if (toolInvocation.toolName === 'getPortfolio') {
           switch (toolInvocation.state) {
             case 'call':
-              return <div key={`tool-${partIndex}`} className="py-2">Fetching your portfolio data...</div>;
+              return <div key={`tool-${partIndex}`} className="py-0">Fetching your portfolio data...</div>;
             case 'result':
               if (toolInvocation.result?.status === 'success' && toolInvocation.result?.portfolio) {
                 return (
-                  <div key={`tool-${partIndex}`} className="py-2 w-full">
+                  <div key={`tool-${partIndex}`} className="py-0 w-full">
                     <PortfolioVisualization portfolio={toolInvocation.result.portfolio as Portfolio} />
                   </div>
                 );
@@ -237,16 +250,8 @@ export default function Home() {
           }
         }
 
-        // For other tool invocations, simply display the result
-        return (
-          <div key={`tool-${partIndex}`} className="py-2">
-            {toolInvocation.state === 'result' && toolInvocation.result && (
-              <div className="text-sm text-gray-400 whitespace-pre-wrap font-mono bg-gray-800/50 p-2 rounded-md overflow-auto">
-                {JSON.stringify(toolInvocation.result, null, 2)}
-              </div>
-            )}
-          </div>
-        );
+        // For other tool invocations
+        return <div key={`text-${partIndex}`} dangerouslySetInnerHTML={{ __html: marked.parse(message.content) }} className="prose prose-p:text-sm prose-invert"></div>;
       }
       return null;
     });

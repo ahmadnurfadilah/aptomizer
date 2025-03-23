@@ -68,14 +68,14 @@ export function JoulePoolDetails({ pool }: JoulePoolDetailsProps) {
     );
   }
 
-  // Calculate values from raw data
-  const marketSize = parseFloat(pool.marketSize) || 0;
-  const totalBorrowed = parseFloat(pool.totalBorrowed) || 0;
+  // // Calculate values from raw data
+  // const marketSize = parseFloat(pool.marketSize) || 0;
+  // const totalBorrowed = parseFloat(pool.totalBorrowed) || 0;
 
-  // Calculated values
-  const availableLiquidity = marketSize - totalBorrowed;
-  const utilizationRate = marketSize > 0 ? totalBorrowed / marketSize : 0;
-  const ltvValue = parseFloat(pool.ltv) / 100;
+  // // Calculated values
+  // const availableLiquidity = marketSize - totalBorrowed;
+  // const utilizationRate = marketSize > 0 ? totalBorrowed / marketSize : 0;
+  // const ltvValue = parseFloat(pool.ltv) / 100;
 
   // APY values
   const extraDepositApy = parseFloat(pool.extraAPY?.depositAPY || '0');
