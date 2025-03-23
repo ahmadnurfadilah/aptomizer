@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 import React from 'react';
 import { formatNumber } from "@/lib/utils";
 import { AlertTriangle, Check, ChevronsUp, DollarSign } from "lucide-react";

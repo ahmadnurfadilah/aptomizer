@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client";
 
 import { useWallet } from "@aptos-labs/wallet-adapter-react";
@@ -407,6 +408,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     fetchPortfolioData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected, account]);
 
   if (!connected) {

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const removeLastInterestRateIndex = (obj: any): any => {
 	if (!obj || typeof obj !== "object") {
 		return obj
