@@ -12,7 +12,6 @@ const IV_LENGTH = 16;
 function getEncryptionKey(): Buffer {
   // If the key is shorter than 32 bytes, pad it
   // If longer, truncate it
-  console.log('ENCRYPTION_KEY', ENCRYPTION_KEY);
   const key = Buffer.from(ENCRYPTION_KEY);
   if (key.length === 32) return key;
 
@@ -32,7 +31,6 @@ function getEncryptionKey(): Buffer {
 function encrypt(text: string): string {
   const iv = crypto.randomBytes(IV_LENGTH);
   const key = getEncryptionKey();
-  console.log('key encrypt', key);
   const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
   let encrypted = cipher.update(text);
   encrypted = Buffer.concat([encrypted, cipher.final()]);
@@ -44,7 +42,6 @@ function decrypt(text: string): string {
   const iv = Buffer.from(textParts.shift()!, 'hex');
   const encryptedText = Buffer.from(textParts.join(':'), 'hex');
   const key = getEncryptionKey();
-  console.log('key decrypt', key);
   const decipher = crypto.createDecipheriv('aes-256-cbc', key, iv);
   decipher.setAutoPadding(false);
   let decrypted = decipher.update(encryptedText);
